@@ -1,0 +1,93 @@
+## CI - Upload packages to NPM
+name: Upload packages to NPM and S3
+run-name: Upload packages to NPM and S3
+
+on:
+  workflow_call:
+    secrets:
+      CENTRAL_ACCOUNT_ID:
+        required: true
+      SERVICES_ACCOUNT_ID:
+        required: true
+      S3_BUCKET_DEPLOYMENT:
+        required: true
+      S3_BUCKET_APPS:
+        required: true
+      NPM_TOKEN:
+        required: true
+      JENKINS_TOKEN:
+        required: true
+    inputs:
+      prod:
+        description: "prod or not boolean - example: 'false/true'"
+        required: true
+        type: string
+      type:
+        description: "choose player or plugin - example: 'plugin/plugin'"
+        required: true
+        type: string
+      stage:
+        description: "build for specific type - example: 'canary/beta/latest'"
+        required: true
+        type: string
+      schema-type:
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+        required: true
+        type: string
+    outputs:
+      version:
+        description: "version - example: '1.00.000'"
+        value: ${{ jobs.build-uiconf.outputs.version }}
+
+jobs:
+  upload-packages-to-npm:
+    uses: ./.github/workflows/upload_to_npm.yaml
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    with:
+      prod: ${{ inputs.prod }}
+  upload-to-s3:
+    needs: upload-packages-to-npm
+    uses: ./.github/workflows/upload_to_s3.yaml
+    secrets:
+      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
+      S3_BUCKET_APPS: ${{ secrets.S3_BUCKET_APPS }}
+    with:
+      aws-secret-central: "github-aws-dev-qa-accounts-8iI9eS"
+      type: ${{ inputs.type }}
+      name: ${{ needs.upload-packages-to-npm.outputs.name }}
+      version: ${{ needs.upload-packages-to-npm.outputs.version }}
+      full-npm-name: ${{ needs.upload-packages-to-npm.outputs.full-npm-name }}
+  update-schema:
+    needs: [upload-to-s3, upload-packages-to-npm]
+    uses: ./.github/workflows/update_schema.yaml
+    secrets:
+      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
+      SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
+      S3_BUCKET_DEPLOYMENT: ${{ secrets.S3_BUCKET_DEPLOYMENT }}
+    with:
+      prod: ${{ inputs.prod }}
+      type: ${{ inputs.type }}
+      schema-type: ${{ inputs.schema-type }}
+      name: ${{ needs.upload-packages-to-npm.outputs.name }}
+      version: ${{ needs.upload-packages-to-npm.outputs.version }}
+  build-uiconf:
+    needs: [update-schema, upload-to-s3, upload-packages-to-npm]
+    uses: ./.github/workflows/build_uiconf.yaml
+    secrets:
+      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
+      SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
+      S3_BUCKET_DEPLOYMENT: ${{ secrets.S3_BUCKET_DEPLOYMENT }}
+    with:
+      stage: ${{ inputs.stage }}
+      schema-type: ${{ inputs.schema-type }}
+  deploy-uiconf:
+    needs: [ build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm ]
+    uses: ./.github/workflows/deploy_uiconf.yaml
+    secrets:
+      JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+    with:
+      stage: ${{ inputs.stage }}
+      version: ${{ needs.build-uiconf.outputs.version }}
+      schema-type: ${{ inputs.schema-type }}
+

@@ -28,7 +28,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Setup Chrome
-        if: matrix.os == 'ubuntu-latest'
         uses: browser-actions/setup-chrome@v1
       - name: Setup Firefox
         if: matrix.os == 'ubuntu-latest'

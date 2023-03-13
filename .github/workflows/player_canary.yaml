@@ -28,7 +28,7 @@ on:
         type: string
       stage:
         description: "build for specific type - example: 'canary/beta/latest'"
-        required: true
+        required: false
         type: string
       schema-type:
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"

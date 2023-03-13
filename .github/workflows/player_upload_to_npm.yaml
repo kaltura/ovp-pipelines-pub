@@ -11,9 +11,9 @@ on:
         description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
         required: false
         type: string
-      prod:
-        description: "prod or not boolean - example: 'false/true'"
-        required: true
+      env:
+        description: "env - example: 'qa/prod/all'"
+        required: false
         type: string
     outputs:
       name:
@@ -65,7 +65,7 @@ jobs:
 
       - name: Yarn run release
         run: |
-          if [ "${{ inputs.prod }}" = "true" ]; then
+          if [ "${{ inputs.env }}" = "prod" ]; then
             yarn run release
           else
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
@@ -90,7 +90,7 @@ jobs:
 
       - name: Yarn publish
         run: |
-          if [ "${{ inputs.prod }}" = "true" ]; then
+          if [ "${{ inputs.env }}" = "prod" ]; then
             yarn publish
           else
             yarn publish --tag dor-test
@@ -99,7 +99,7 @@ jobs:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Yarn run pushTaggedRelease and create github release
-        if: ${{ inputs.prod == 'true' }}
+        if: ${{ inputs.env == 'prod' }}
         run: |
           yarn run pushTaggedRelease
           conventional-github-releaser -p angular -t ${{ secrets.GITHUB_TOKEN }} || true

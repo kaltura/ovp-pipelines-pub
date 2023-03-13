@@ -11,9 +11,9 @@ on:
       S3_BUCKET_DEPLOYMENT:
         required: true
     inputs:
-      prod:
-        description: "prod or not boolean - example: 'false/true'"
-        required: true
+      env:
+        description: "env - example: 'qa/prod/all'"
+        required: false
         type: string
       type:
         description: "choose player or plugin - example: 'plugin'"
@@ -60,7 +60,7 @@ jobs:
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
 
-          if [ "${{ inputs.prod }}" = "true" ]; then
+          if [ "${{ inputs.env }}" = "prod" ]; then
             jsonName="player-qa-dor-test-${{ inputs.schema-type }}.json"
           else
             jsonName="player-dor-test-${{ inputs.schema-type }}.json"

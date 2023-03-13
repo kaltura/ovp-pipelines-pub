@@ -18,9 +18,9 @@ on:
       JENKINS_TOKEN:
         required: true
     inputs:
-      prod:
-        description: "prod or not boolean - example: 'false/true'"
-        required: true
+      env:
+        description: "env - example: 'qa/prod/all'"
+        required: false
         type: string
       type:
         description: "choose player or plugin - example: 'plugin/plugin'"
@@ -34,6 +34,14 @@ on:
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
         required: true
         type: string
+      aws-secret-central:
+        description: "schema-type - example: 'github-aws-dev-qa-accounts-8iI9eS/xxx'"
+        required: true
+        type: string
+      yarn-upgrade-list:
+        description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
+        required: false
+        type: string
     outputs:
       version:
         description: "version - example: '1.00.000'"
@@ -45,7 +53,8 @@ jobs:
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     with:
-      prod: ${{ inputs.prod }}
+      env: ${{ inputs.env }}
+      yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}
   upload-to-s3:
     needs: upload-packages-to-npm
     uses: ./.github/workflows/player_upload_to_s3.yaml
@@ -53,7 +62,7 @@ jobs:
       CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
       S3_BUCKET_APPS: ${{ secrets.S3_BUCKET_APPS }}
     with:
-      aws-secret-central: "github-aws-dev-qa-accounts-8iI9eS"
+      aws-secret-central: ${{ inputs.aws-secret-central }}
       type: ${{ inputs.type }}
       name: ${{ needs.upload-packages-to-npm.outputs.name }}
       version: ${{ needs.upload-packages-to-npm.outputs.version }}
@@ -66,12 +75,13 @@ jobs:
       SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
       S3_BUCKET_DEPLOYMENT: ${{ secrets.S3_BUCKET_DEPLOYMENT }}
     with:
-      prod: ${{ inputs.prod }}
+      env: ${{ inputs.env }}
       type: ${{ inputs.type }}
       schema-type: ${{ inputs.schema-type }}
       name: ${{ needs.upload-packages-to-npm.outputs.name }}
       version: ${{ needs.upload-packages-to-npm.outputs.version }}
   build-uiconf:
+    if: ${{ inputs.stage == 'canary' }}
     needs: [update-schema, upload-to-s3, upload-packages-to-npm]
     uses: ./.github/workflows/player_build_uiconf.yaml
     secrets:
@@ -82,12 +92,14 @@ jobs:
       stage: ${{ inputs.stage }}
       schema-type: ${{ inputs.schema-type }}
   deploy-uiconf:
+    if: ${{ inputs.stage == 'canary' }}
     needs: [ build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm ]
     uses: ./.github/workflows/player_deploy_uiconf.yaml
     secrets:
       JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
     with:
       stage: ${{ inputs.stage }}
+      env: ${{ inputs.env }}
       version: ${{ needs.build-uiconf.outputs.version }}
       schema-type: ${{ inputs.schema-type }}
 

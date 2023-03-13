@@ -11,6 +11,10 @@ on:
       S3_BUCKET_DEPLOYMENT:
         required: true
     inputs:
+      env:
+        description: "env - example: 'qa/prod/all'"
+        required: false
+        type: string
       stage:
         description: "build for specific type - example: 'canary/beta/latest'"
         required: true
@@ -84,15 +88,30 @@ jobs:
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
 
-          jsonName="playkit_dor_test_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.json"
+          if [ "${{ inputs.stage }}" == "canary" ]; then
+            jsonNameSchema="player-canary-${{ inputs.schema-type }}.json"
+          elif [ "${{ inputs.env }}" == "qa" ] && ["${{ inputs.stage }}" == "beta" ]; then
+            jsonNameSchema="player-qa-beta-${{ inputs.schema-type }}.json"
+          elif [ "${{ inputs.env }}" == "prod" ] && ["${{ inputs.stage }}" == "beta" ]; then
+            jsonNameSchema="player-prod-beta-${{ inputs.schema-type }}.json"
+          elif [ "${{ inputs.env }}" == "prod" ] && ["${{ inputs.stage }}" == "latest" ]; then
+            jsonNameSchema="player-prod-latest-${{ inputs.schema-type }}.json"
+          else
+            jsonNameSchema="player-qa-${{ inputs.schema-type }}.json"
+          fi
 
+          s3PathSchema="s3://nvp1-${{ secrets.S3_BUCKET_DEPLOYMENT }}/player/schema"
+          aws s3 cp ${s3PathSchema}/${jsonNameSchema} ${jsonNameSchema}
+          jsonConf=$(cat ${jsonNameSchema})
+
+          jsonName="playkit_dor_test_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.json"
           s3Path="s3://nvp1-${{ secrets.S3_BUCKET_DEPLOYMENT }}/player/uiconf"
 
           tmp=$(mktemp)
           echo "[general]" > "$tmp"
           echo "component.name = ${{ inputs.schema-type }}" >> "$tmp"
           echo "component.version = ${{ inputs.stage }}" >> "$tmp"
-          echo "\n" >> "$tmp"
+          echo "" >> "$tmp"
           echo "[defaultKdp]" >> "$tmp"
           echo "objectType = 6" >> "$tmp"
           echo "widgets.versions.conf_vars = '{"version":"${{ steps.version.outputs.version }}"}'" >> "$tmp"

@@ -93,7 +93,7 @@ jobs:
           if [ "${{ inputs.env }}" = "prod" ]; then
             yarn publish
           else
-            yarn publish --tag dor-test
+            yarn publish --tag canary
           fi
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

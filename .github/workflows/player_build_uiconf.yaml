@@ -68,11 +68,11 @@ jobs:
             oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
             newVersion=$(echo "${oldVersion}" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}')
             if [ "${{ inputs.stage }}" = "latest" ]; then
-              aws ssm put-parameter --name /player/versions/uiconf/canary-dor-test --value "NULL" --overwrite --region us-east-1
+              aws ssm put-parameter --name /player/versions/uiconf/canary --value "NULL" --overwrite --region us-east-1
             fi
           fi
 
-          aws ssm put-parameter --name /player/versions/uiconf/${{ inputs.stage }}-dor-test --value ${newVersion} --overwrite --region us-east-1
+          aws ssm put-parameter --name /player/versions/uiconf/${{ inputs.stage }} --value ${newVersion} --overwrite --region us-east-1
 
           echo "new version is: ${newVersion}"
           echo "version=${newVersion}" >> $GITHUB_OUTPUT
@@ -104,7 +104,7 @@ jobs:
           aws s3 cp ${s3PathSchema}/${jsonNameSchema} ${jsonNameSchema}
           jsonConf=$(cat ${jsonNameSchema})
 
-          jsonName="playkit_dor_test_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.json"
+          jsonName="playkit_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.json"
           s3Path="s3://nvp1-${{ secrets.S3_BUCKET_DEPLOYMENT }}/player/uiconf"
 
           tmp=$(mktemp)

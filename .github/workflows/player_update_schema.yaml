@@ -61,9 +61,9 @@ jobs:
                       --output text))
 
           if [ "${{ inputs.env }}" = "prod" ]; then
-            jsonName="player-qa-dor-test-${{ inputs.schema-type }}.json"
+            jsonName="player-qa-${{ inputs.schema-type }}.json"
           else
-            jsonName="player-dor-test-${{ inputs.schema-type }}.json"
+            jsonName="player-canary-${{ inputs.schema-type }}.json"
           fi
 
           s3Path="s3://nvp1-${{ secrets.S3_BUCKET_DEPLOYMENT }}/player/schema"

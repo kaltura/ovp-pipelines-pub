@@ -6,6 +6,8 @@ on:
     secrets:
       JENKINS_TOKEN:
         required: true
+      CENTRAL_ACCOUNT_ID:
+        required: true
     inputs:
       stage:
         description: "stage - example: 'canary/beta/latest'"
@@ -30,31 +32,33 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-session-name: githubAction
+          aws-region: "eu-central-1"
+
       - name: Trigger jenkins job for uiconf deployment
         run: |
           if [ "${{ inputs.stage }}" = "canary" ]; then
-            generate_post_data='{"stage": "${{ inputs.stage }}", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}"}'
+            generate_post_data='{"stage": "${{ inputs.stage }}", "env": "qa", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}"}'
           else
             generate_post_data='{"stage": "${{ inputs.stage }}", "env": "${{ inputs.env }}", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}"}'
           fi
 
-          for i in {1..3}; do
-            echo "Try number $i for pinging Jenkins...\n"
-            HTTP_CODE=$(curl -k -d "${generate_post_data}" -H "Content-Type: application/json" --silent --output /dev/stderr --write-out "%{http_code}" --fail -X POST https://jenkins-central.prod.ovp.kaltura.com/generic-webhook-trigger/invoke?token=${{ secrets.JENKINS_TOKEN }})
-            STATUS_CODE=$?
-            echo "Request return with http code $HTTP_CODE and curl finished with status code $STATUS_CODE"
-            if [ "$HTTP_CODE" -eq 200 ] && [ "$STATUS_CODE" -eq 0 ]; then
-              HTTP_SUCCESS=true
-              break
-            fi
-          done
+          aws lambda invoke --function-name ${{ secrets.LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json
 
-          echo "Jenkins ping success status - $HTTP_SUCCESS"
+          status=$(jq -r '.status' response.json)
 
-          if [ "$HTTP_SUCCESS" = true ]; then
-            exit 0
+          if [ "${status}" == "Success" ]; then
+            echo "Success"
           else
+            echo "Failed"
+            jq -r '.' response.json
             exit 1
           fi
 

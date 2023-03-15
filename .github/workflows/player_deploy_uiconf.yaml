@@ -8,6 +8,8 @@ on:
         required: true
       CENTRAL_ACCOUNT_ID:
         required: true
+      LAMBDA_NAME:
+        required: true
     inputs:
       stage:
         description: "stage - example: 'canary/beta/latest'"

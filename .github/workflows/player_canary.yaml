@@ -106,6 +106,8 @@ jobs:
     uses: ./.github/workflows/player_deploy_uiconf.yaml
     secrets:
       JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
+      LAMBDA_NAME: ${{ secrets.LAMBDA_NAME }}
     with:
       stage: ${{ inputs.stage }}
       env: ${{ inputs.env }}

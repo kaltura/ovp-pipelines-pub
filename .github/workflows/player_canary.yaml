@@ -17,6 +17,8 @@ on:
         required: true
       JENKINS_TOKEN:
         required: true
+      LAMBDA_NAME:
+        required: true
     inputs:
       env:
         description: "env - example: 'qa/prod/all'"

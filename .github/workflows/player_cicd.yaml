@@ -1,6 +1,6 @@
 ## CI - Upload packages to NPM
-name: Upload packages to NPM and S3
-run-name: Upload packages to NPM and S3
+name: Full CICD
+run-name: Full CICD
 
 on:
   workflow_call:

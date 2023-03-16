@@ -1,6 +1,6 @@
 ## CD - Promote schema
-name: Promote schema
-run-name: Promote schema
+name: Promote
+run-name: Promote
 
 on:
   workflow_call:

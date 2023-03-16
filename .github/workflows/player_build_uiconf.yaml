@@ -11,13 +11,13 @@ on:
       S3_BUCKET_DEPLOYMENT:
         required: true
     inputs:
-      env:
-        description: "env - example: 'qa/prod/all'"
-        required: false
-        type: string
       stage:
         description: "build for specific type - example: 'canary/beta/latest'"
         required: true
+        type: string
+      env:
+        description: "env - example: 'qa/prod/all'"
+        required: false
         type: string
       schema-type:
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"

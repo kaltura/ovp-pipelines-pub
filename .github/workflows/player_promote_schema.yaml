@@ -23,6 +23,9 @@ on:
       stage:
         description: "stage - example: 'beta/latest'"
         value: ${{ jobs.promote-schema.outputs.stage }}
+      env:
+        description: "env - example: 'qa/prod'"
+        value: ${{ jobs.promote-schema.outputs.env }}
 
 jobs:
   promote-schema:
@@ -32,6 +35,7 @@ jobs:
       contents: read
     outputs:
       stage: ${{ steps.stage.outputs.stage }}
+      env: ${{ steps.env.outputs.env }}
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -69,19 +73,36 @@ jobs:
 
           aws s3 cp ${jsonNameTo} ${s3Path}/
 
-      - name: Build for beta/latest
-        id: stage
+      - name: Build for env qa/prod
+        id: env
         run: |
-          to=$(echo "${{ inputs.promotion-type }}" | awk -F ' --> ' '{print $2}')
+          to=$(echo "${{ inputs.promotion-type }}" | awk -F ' --> ' '{print $2}' | awk -F '-' '{print $1}')
 
-          if [[ $to =~ "beta" ]]; then
-            stage="beta"
-          elif [[ $to =~ "latest" ]]; then
-            stage="latest"
+          if [[ $to == "prod" ]]; then
+            env="prod"
+          elif [[ $to == "qa" ]]; then
+            env="qa"
           else
-            echo "Wrong destination"
+            echo "Wrong env"
             exit 1
           fi
 
-          echo "build for ${stage}"
+          echo "build for env ${env}"
+          echo "env=${env}" >> $GITHUB_OUTPUT
+
+      - name: Build for stage beta/latest
+        id: stage
+        run: |
+          to=$(echo "${{ inputs.promotion-type }}" | awk -F ' --> ' '{print $2}' | awk -F '-' '{print $2}')
+
+          if [[ "$to" == "beta" ]]; then
+            stage="beta"
+          elif [[ "$to" == "latest" ]]; then
+            stage="latest"
+          else
+            echo "Wrong stage"
+            exit 1
+          fi
+
+          echo "build for stage ${stage}"
           echo "stage=${stage}" >> $GITHUB_OUTPUT

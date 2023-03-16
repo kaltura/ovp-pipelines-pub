@@ -1,0 +1,60 @@
+## CD - Promote schema
+name: Promote schema
+run-name: Promote schema
+
+on:
+  workflow_call:
+    secrets:
+      CENTRAL_ACCOUNT_ID:
+        required: true
+      SERVICES_ACCOUNT_ID:
+        required: true
+      S3_BUCKET_DEPLOYMENT:
+        required: true
+      JENKINS_TOKEN:
+        required: true
+      LAMBDA_NAME:
+        required: true
+    inputs:
+      promotion-type:
+        type: string
+        required: true
+        description: "from - to"
+      schema-type:
+        type: string
+        required: true
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+
+jobs:
+  promote-schema:
+    uses: ./.github/workflows/promote_schema.yaml
+    secrets:
+      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
+      SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
+      S3_BUCKET_DEPLOYMENT: ${{ secrets.S3_BUCKET_DEPLOYMENT }}
+    with:
+      promotion-type: ${{ inputs.promotion-type }}
+      schema-type: ${{ inputs.schema-type }}
+  build-uiconf:
+    needs: promote-schema
+    uses: ./.github/workflows/player_promote_schema.yaml
+    secrets:
+      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
+      SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
+      S3_BUCKET_DEPLOYMENT: ${{ secrets.S3_BUCKET_DEPLOYMENT }}
+    with:
+      stage: ${{ needs.promote-schema.outputs.stage }}
+      env: ${{ needs.promote-schema.outputs.env }}
+      schema-type: ${{ inputs.schema-type }}
+  deploy-uiconf:
+    needs: [ promote-schema, build-uiconf ]
+    uses: ./.github/workflows/player_deploy_uiconf.yaml
+    secrets:
+      JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
+      LAMBDA_NAME: ${{ secrets.LAMBDA_NAME }}
+    with:
+      stage: ${{ needs.promote-schema.outputs.stage }}
+      env: ${{ needs.promote-schema.outputs.env }}
+      version: ${{ needs.build-uiconf.outputs.version }}
+      schema-type: ${{ inputs.schema-type }}

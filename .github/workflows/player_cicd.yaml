@@ -48,10 +48,6 @@ on:
         description: "list of package.json scripts - example: 'eslint flow test'"
         required: true
         type: string
-    outputs:
-      version:
-        description: "version - example: '1.00.000'"
-        value: ${{ jobs.build-uiconf.outputs.version }}
 
 jobs:
   running-tests:

@@ -104,7 +104,7 @@ jobs:
           aws s3 cp ${s3PathSchema}/${jsonNameSchema} ${jsonNameSchema}
           jsonConf=$(cat ${jsonNameSchema})
 
-          jsonName="playkit_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.json"
+          jsonName="playkit_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.ini"
           s3Path="s3://nvp1-${{ secrets.S3_BUCKET_DEPLOYMENT }}/player/uiconf"
 
           tmp=$(mktemp)

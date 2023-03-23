@@ -19,6 +19,8 @@ on:
         required: true
       LAMBDA_NAME:
         required: true
+      MSTEAMS_WEBHOOK:
+        required: true
     inputs:
       env:
         description: "env - example: 'qa/prod/all'"
@@ -111,4 +113,12 @@ jobs:
       env: ${{ inputs.env }}
       version: ${{ needs.build-uiconf.outputs.version }}
       schema-type: ${{ inputs.schema-type }}
-
+  notification:
+    if: always()
+    uses: ./.github/workflows/notification.yaml
+    needs: [ deploy-uiconf, build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm, running-tests ]
+    secrets:
+      MSTEAMS_WEBHOOK: ${{ secrets.MSTEAMS_WEBHOOK }}
+    with:
+      failure_status: ${{ contains(needs.*.result, 'failure') }}
+      cancelled_status: ${{ contains(needs.*.result, 'cancelled') }}

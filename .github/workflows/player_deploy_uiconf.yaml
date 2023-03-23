@@ -44,7 +44,7 @@ jobs:
           role-session-name: githubAction
           aws-region: "eu-central-1"
 
-      - name: Trigger jenkins job for uiconf deployment
+      - name: Trigger uiconf deployment
         run: |
           if [ "${{ inputs.stage }}" = "canary" ]; then
             generate_post_data='{"stage": "${{ inputs.stage }}", "env": "qa", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'

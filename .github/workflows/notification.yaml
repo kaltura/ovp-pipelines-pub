@@ -1,0 +1,176 @@
+name: Notification
+run-name: Notification
+
+on:
+  workflow_call:
+    secrets:
+      MSTEAMS_WEBHOOK:
+        required: true
+    inputs:
+      failure_status:
+        description: "failure_status"
+        required: false
+        type: string
+        default: 'false'
+      cancelled_status:
+        description: "cancelled_status"
+        required: false
+        type: string
+        default: 'false'
+
+jobs:
+  notification:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Dump GitHub context
+        if: always()
+        run: echo '${{ toJSON(github) }}'
+      - name: Dump job context
+        if: always()
+        run: echo '${{ toJSON(job) }}'
+      - name: Set status
+        id: status
+        run: |
+          if ${{ inputs.failure_status }}; then
+            status='failure'
+          elif ${{ inputs.cancelled_status }}; then
+            status='cancelled'
+          else
+            status='success'
+          fi
+          echo $status
+          echo "status=${status}" >> $GITHUB_OUTPUT
+      - name: Set image status url
+        if: always()
+        id: image_url
+        run: |
+          if ${{ inputs.failure_status }} || ${{ inputs.cancelled_status }}; then
+            image_url="https://w7.pngwing.com/pngs/851/757/png-transparent-button-error-s-image-file-formats-trademark-heart-thumbnail.png"
+          else
+            image_url="https://w7.pngwing.com/pngs/238/160/png-transparent-computer-icons-advertising-business-service-email-marketing-success-angle-service-people-thumbnail.png"
+          fi
+          echo $image_url
+          echo "image_url=${image_url}" >> $GITHUB_OUTPUT
+      - name: Message
+        if: (always()) && (github.event_name == 'push')
+        id: message
+        run: |
+          message="${{ github.event.head_commit.message }}"
+
+          echo 'message<<EOF' >> $GITHUB_OUTPUT
+          echo "$message" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+      - name: Inputs
+        if: (always()) && (github.event_name == 'workflow_dispatch')
+        id: inputs
+        run: |
+          inputs="$(echo '${{ toJSON(github.event.inputs) }}'| jq -r '.' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')"
+
+          echo $inputs
+          echo "inputs=${inputs}" >> $GITHUB_OUTPUT
+      - name: Microsoft Teams Notification pull_request
+        uses: skitionek/notify-microsoft-teams@v1.0.4
+        if: (always()) && (github.event_name == 'pull_request')
+        with:
+          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          raw: >-
+            {
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "summary": "Player Workflow",
+              "sections": [ {
+                "activityTitle": "Created a new pull_request in ${{ github.event.repository.name }}",
+                "activitySubtitle": "Assigned to: ${{ github.actor }}",
+                "facts": [{
+                  "name": "From branch",
+                  "value": "${{ github.head_ref }}"
+                }, {
+                  "name": "To branch",
+                  "value": "${{ github.base_ref }}"
+                }, {
+                  "name": "Commit ID",
+                  "value": "${{ github.sha }}"
+                }, {
+                  "name": "Pull request number",
+                  "value": "${{ github.event.number }}"
+                }, {
+                  "name": "Pull request title",
+                  "value": "${{ github.event.pull_request.title }}"
+                }, {
+                  "name": "Pull request link",
+                  "value": "${{ github.event.pull_request._links.html.href }}"
+                } ],
+                "markdown": true
+              } ]
+            }
+      - name: Microsoft Teams Notification push
+        uses: skitionek/notify-microsoft-teams@v1.0.4
+        if: (always()) && (github.event_name == 'push')
+        with:
+          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          raw: >-
+            {
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "summary": "Player Workflow",
+              "sections": [ {
+                "activityTitle": "Push to ${{ github.ref_name }} in ${{ github.event.repository.name }}",
+                "activitySubtitle": "Assigned to: ${{ github.actor }}",
+                "activityImage": "${{ steps.image_url.outputs.image_url }}",
+                "facts": [ {
+                  "name": "Status",
+                  "value": "${{ steps.status.outputs.status }}"
+                }, {
+                  "name": "Commit ID",
+                  "value": "${{ github.sha }}"
+                }, {
+                  "name": "Commit message",
+                  "value": "${{ steps.message.outputs.message }}"
+                }, {
+                  "name": "workflow run id",
+                  "value": "${{ github.run_number }}"
+                }, {
+                  "name": "Workflow link",
+                  "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                } ],
+                "markdown": true
+              } ]
+            }
+      - name: Microsoft Teams Notification workflow_dispatch
+        uses: skitionek/notify-microsoft-teams@v1.0.4
+        if: (always()) && (github.event_name == 'workflow_dispatch')
+        with:
+          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          raw: >-
+            {
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "summary": "Player Workflow",
+              "sections": [ {
+                "activityTitle": "Run workflow '${{ github.workflow }}' on ${{ github.event.repository.name }}",
+                "activitySubtitle": "Assigned to: ${{ github.actor }}",
+                "activityImage": "${{ steps.image_url.outputs.image_url }}",
+                "facts": [ {
+                  "name": "Status",
+                  "value": "${{ steps.status.outputs.status }}"
+                }, {
+                  "name": "Commit ID",
+                  "value": "${{ github.sha }}"
+                }, {
+                  "name": "Branch",
+                  "value": "${{ github.ref_name }}"
+                }, {
+                  "name": "Inputs",
+                  "value": "${{ steps.inputs.outputs.inputs }}"
+                }, {
+                  "name": "workflow run id",
+                  "value": "${{ github.run_number }}"
+                }, {
+                  "name": "Workflow link",
+                  "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                } ],
+                "markdown": true
+              } ]
+            }

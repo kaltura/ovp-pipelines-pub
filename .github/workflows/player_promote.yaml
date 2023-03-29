@@ -26,10 +26,14 @@ on:
         type: string
         required: true
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+      uiconf-new-version:
+        type: string
+        required: false
+        description: "not required - if no value is given it will increment the minor version - example 'from 1.00 to 1.01'"
 
 jobs:
   promote-schema:
-    uses: ./.github/workflows/promote_schema.yaml
+    uses: ./.github/workflows/player_promote_schema.yaml
     secrets:
       CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
       SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
@@ -39,7 +43,7 @@ jobs:
       schema-type: ${{ inputs.schema-type }}
   build-uiconf:
     needs: promote-schema
-    uses: ./.github/workflows/player_promote_schema.yaml
+    uses: ./.github/workflows/player_build_uiconf.yaml
     secrets:
       CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
       SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
@@ -48,6 +52,7 @@ jobs:
       stage: ${{ needs.promote-schema.outputs.stage }}
       env: ${{ needs.promote-schema.outputs.env }}
       schema-type: ${{ inputs.schema-type }}
+      uiconf-new-version: ${{ inputs.uiconf-new-version }}
   deploy-uiconf:
     needs: [ promote-schema, build-uiconf ]
     uses: ./.github/workflows/player_deploy_uiconf.yaml

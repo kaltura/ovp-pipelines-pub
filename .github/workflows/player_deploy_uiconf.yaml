@@ -27,6 +27,10 @@ on:
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
         required: true
         type: string
+      file-name:
+        description: "uiconf file name in s3 - example 'playkit_playerV3Versions_7.60.39_canary.ini'"
+        required: true
+        type: string
 
 jobs:
   deploy-uiconf:
@@ -34,33 +38,62 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    outputs:
-      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ secrets.CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
-          role-session-name: githubAction
+          role-session-name: githubAction-${{ github.run_id }}
           aws-region: "eu-central-1"
 
-      - name: Trigger uiconf deployment
+      - name: Get secret
+        id: secret-name
         run: |
-          if [ "${{ inputs.stage }}" = "canary" ]; then
-            generate_post_data='{"stage": "${{ inputs.stage }}", "env": "qa", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'
+          if [ "${{ inputs.stage }}" == "canary" ]; then
+            secret_name="uiconf-aws-dev-qa-accounts"
+          elif [ "${{ inputs.env }}" == "prod" ]; then
+            secret_name="uiconf-aws-all-accounts"
           else
-            generate_post_data='{"stage": "${{ inputs.stage }}", "env": "${{ inputs.env }}", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'
-          fi
-
-          aws lambda invoke --function-name ${{ secrets.LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json
-
-          status=$(jq -r '.status' response.json)
-
-          if [ "${status}" == "Success" ]; then
-            echo "Success"
-          else
-            echo "Failed"
-            jq -r '.' response.json
             exit 1
           fi
 
+          echo $secret_name
+          echo "secret-name=$secret_name" >> $GITHUB_OUTPUT
+
+      - name: Get environments list
+        id: accounts
+        run: |
+          aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret-name.outputs.secret-name }} --query SecretString --output text | jq -c .)
+          echo $aws_envs | jq -c '.[]' | while read i; do app_id=$(jq -r '.app_id' <<< "$i"); echo "::add-mask::$app_id"; done
+          echo $aws_envs | jq -c '.[]' | while read i; do app_token=$(jq -r '.app_token' <<< "$i"); echo "::add-mask::$app_token"; done
+          echo $aws_envs | jq -c '.[]' | while read i; do service_url=$(jq -r '.service_url' <<< "$i"); echo "::add-mask::$service_url"; done
+          echo $aws_envs | jq -c '.[]' | while read i; do partner_id=$(jq -r '.partner_id' <<< "$i"); echo "::add-mask::$partner_id"; done
+
+          accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" '{"env": $env}' ; done | jq -s -c .)
+
+          echo $accounts
+          echo "accounts=$accounts" >> $GITHUB_OUTPUT
+
+      - name: Trigger uiconf deployment
+        run: |
+          echo ${{ steps.accounts.outputs.accounts }} | jq -c '.[]' | while read i; do
+            env_name="$(jq -r '.env' <<< "$i")"
+            filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
+            new_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.version }},${{ inputs.schema-type }},${{ inputs.stage }}"
+            file_name="${{ inputs.file-name }}"
+            generate_post_data='{"secret_name": "${{ steps.secret-name.outputs.secret-name }}", "filter_tags": "${filter_tags}", "new_tags": "${new_tags}", "file_name": "${file_name}", "env": "${env_name}"}'
+
+            aws lambda invoke --function-name ${{ secrets.LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json > /dev/null 2>&1
+
+            status=$(jq -r '.status' response.json)
+
+            echo "Running lambda on env ${env_name} finished:"
+            if [ "${status}" == "Success" ]; then
+              echo "Success"
+              jq -r '.' response.json
+            else
+              echo "Failed"
+              jq -r '.' response.json
+              exit 1
+            fi
+          done

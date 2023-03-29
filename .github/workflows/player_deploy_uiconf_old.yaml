@@ -1,0 +1,66 @@
+name: Deploy uiconf
+run-name: Deploy uiconf
+
+on:
+  workflow_call:
+    secrets:
+      JENKINS_TOKEN:
+        required: true
+      CENTRAL_ACCOUNT_ID:
+        required: true
+      LAMBDA_NAME:
+        required: true
+    inputs:
+      stage:
+        description: "stage - example: 'canary/beta/latest'"
+        required: true
+        type: string
+      env:
+        description: "env - example: 'qa/prod/all'"
+        required: false
+        type: string
+      version:
+        description: "version - example: '1.00.000'"
+        required: true
+        type: string
+      schema-type:
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+        required: true
+        type: string
+
+jobs:
+  deploy-uiconf:
+    runs-on: [ ubuntu-latest ]
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-session-name: githubAction
+          aws-region: "eu-central-1"
+
+      - name: Trigger uiconf deployment
+        run: |
+          if [ "${{ inputs.stage }}" == "canary" ]; then
+            generate_post_data='{"stage": "${{ inputs.stage }}", "env": "qa", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'
+          else
+            generate_post_data='{"stage": "${{ inputs.stage }}", "env": "${{ inputs.env }}", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'
+          fi
+
+          aws lambda invoke --function-name ${{ secrets.LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json
+
+          status=$(jq -r '.status' response.json)
+
+          if [ "${status}" == "Success" ]; then
+            echo "Success"
+          else
+            echo "Failed"
+            jq -r '.' response.json
+            exit 1
+          fi
+

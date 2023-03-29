@@ -27,6 +27,9 @@ on:
       version:
         description: "version - example: '1.00.000'"
         value: ${{ jobs.build-uiconf.outputs.version }}
+      file-name:
+        description: "ini file name - example 'playkit_playerV3Versions_7.60.39_canary.ini'"
+        value: ${{ jobs.build-uiconf.outputs.file-name }}
 
 jobs:
   build-uiconf:
@@ -36,6 +39,7 @@ jobs:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+      file-name: ${{ steps.file-name.outputs.file-name }}
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -56,9 +60,9 @@ jobs:
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
 
-          if [ "${{ inputs.stage }}" = "canary" ]; then
+          if [ "${{ inputs.stage }}" == "canary" ]; then
             oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/canary --region us-east-1 | jq -r .Parameters[].Value)
-            if [ "${oldVersion}" = "NULL" ]; then
+            if [ "${oldVersion}" == "NULL" ]; then
               oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
               newVersion="${oldVersion}.001"
             else
@@ -67,7 +71,7 @@ jobs:
           else
             oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
             newVersion=$(echo "${oldVersion}" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}')
-            if [ "${{ inputs.stage }}" = "latest" ]; then
+            if [ "${{ inputs.stage }}" == "latest" ]; then
               aws ssm put-parameter --name /player/versions/uiconf/canary --value "NULL" --overwrite --region us-east-1
             fi
           fi
@@ -104,7 +108,7 @@ jobs:
           aws s3 cp ${s3PathSchema}/${jsonNameSchema} ${jsonNameSchema}
           jsonConf=$(cat ${jsonNameSchema})
 
-          jsonName="playkit_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.ini"
+          iniName="playkit_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.ini"
           s3Path="s3://nvp1-${{ secrets.S3_BUCKET_DEPLOYMENT }}/player/uiconf"
 
           tmp=$(mktemp)
@@ -119,8 +123,14 @@ jobs:
           echo "widgets.versions.usage = list,${{ steps.version.outputs.version }},${{ inputs.schema-type }},${{ inputs.stage }}" >> "$tmp"
           echo "widgets.versions.config = '${jsonConf}'" >> "$tmp"
 
-          mv "$tmp" ${jsonName}
+          mv "$tmp" ${iniName}
 
-          aws s3 cp ${jsonName} ${s3Path}/
+          aws s3 cp ${iniName} ${s3Path}/
 
+      - name: Output file-name
+        id: file-name
+        run: |
+          iniName="playkit_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.ini"
 
+          echo "file name is: ${iniName}"
+          echo "file-name=${iniName}" >> $GITHUB_OUTPUT

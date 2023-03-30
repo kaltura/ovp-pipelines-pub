@@ -43,7 +43,7 @@ jobs:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
-      file-name: ${{ steps.file-name.outputs.file-name }}
+      file-name: ${{ steps.file_name.outputs.file_name }}
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -64,9 +64,9 @@ jobs:
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
 
-          if [ "${{ inputs.stage }}" == "canary" ]; then
+          if [ "${{ inputs.stage }}" = "canary" ]; then
             oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/canary --region us-east-1 | jq -r .Parameters[].Value)
-            if [ "${oldVersion}" == "NULL" ]; then
+            if [ "${oldVersion}" = "NULL" ]; then
               oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
               newVersion="${oldVersion}.001"
             else
@@ -80,7 +80,7 @@ jobs:
               newVersion=${{ inputs.uiconf-new-version }}
             fi
 
-            if [ "${{ inputs.stage }}" == "latest" ]; then
+            if [ "${{ inputs.stage }}" = "latest" ]; then
               aws ssm put-parameter --name /player/versions/uiconf/canary --value "NULL" --overwrite --region us-east-1
             fi
           fi
@@ -101,13 +101,13 @@ jobs:
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
 
-          if [ "${{ inputs.stage }}" == "canary" ]; then
+          if [ "${{ inputs.stage }}" = "canary" ]; then
             jsonNameSchema="player-canary-${{ inputs.schema-type }}.json"
-          elif [ "${{ inputs.env }}" == "qa" ] && ["${{ inputs.stage }}" == "beta" ]; then
+          elif [ "${{ inputs.env }}" = "qa" ] && ["${{ inputs.stage }}" = "beta" ]; then
             jsonNameSchema="player-qa-beta-${{ inputs.schema-type }}.json"
-          elif [ "${{ inputs.env }}" == "prod" ] && ["${{ inputs.stage }}" == "beta" ]; then
+          elif [ "${{ inputs.env }}" = "prod" ] && ["${{ inputs.stage }}" = "beta" ]; then
             jsonNameSchema="player-prod-beta-${{ inputs.schema-type }}.json"
-          elif [ "${{ inputs.env }}" == "prod" ] && ["${{ inputs.stage }}" == "latest" ]; then
+          elif [ "${{ inputs.env }}" = "prod" ] && ["${{ inputs.stage }}" = "latest" ]; then
             jsonNameSchema="player-prod-latest-${{ inputs.schema-type }}.json"
           else
             jsonNameSchema="player-qa-${{ inputs.schema-type }}.json"
@@ -136,10 +136,10 @@ jobs:
 
           aws s3 cp ${iniName} ${s3Path}/
 
-      - name: Output file-name
-        id: file-name
+      - name: Output file_name
+        id: file_name
         run: |
           iniName="playkit_${{ inputs.schema-type }}_${{ steps.version.outputs.version }}_${{ inputs.stage }}.ini"
 
           echo "file name is: ${iniName}"
-          echo "file-name=${iniName}" >> $GITHUB_OUTPUT
+          echo "file_name=${iniName}" >> $GITHUB_OUTPUT

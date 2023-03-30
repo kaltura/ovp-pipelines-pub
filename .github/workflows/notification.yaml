@@ -7,13 +7,13 @@ on:
       MSTEAMS_WEBHOOK:
         required: true
     inputs:
-      failure_status:
-        description: "failure_status"
+      failure-status:
+        description: "failure-status"
         required: false
         type: string
         default: 'false'
-      cancelled_status:
-        description: "cancelled_status"
+      cancelled-status:
+        description: "cancelled-status"
         required: false
         type: string
         default: 'false'
@@ -33,9 +33,9 @@ jobs:
       - name: Set status
         id: status
         run: |
-          if ${{ inputs.failure_status }}; then
+          if ${{ inputs.failure-status }}; then
             status='failure'
-          elif ${{ inputs.cancelled_status }}; then
+          elif ${{ inputs.cancelled-status }}; then
             status='cancelled'
           else
             status='success'
@@ -46,7 +46,7 @@ jobs:
         if: always()
         id: image_url
         run: |
-          if ${{ inputs.failure_status }} || ${{ inputs.cancelled_status }}; then
+          if ${{ inputs.failure-status }} || ${{ inputs.cancelled-status }}; then
             image_url="https://w7.pngwing.com/pngs/851/757/png-transparent-button-error-s-image-file-formats-trademark-heart-thumbnail.png"
           else
             image_url="https://w7.pngwing.com/pngs/238/160/png-transparent-computer-icons-advertising-business-service-email-marketing-success-angle-service-people-thumbnail.png"

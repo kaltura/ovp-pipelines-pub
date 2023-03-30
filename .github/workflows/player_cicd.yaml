@@ -38,10 +38,6 @@ on:
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
         required: true
         type: string
-      aws-secret-central:
-        description: "schema-type - example: 'github-aws-dev-qa-accounts-8iI9eS/xxx'"
-        required: true
-        type: string
       yarn-upgrade-list:
         description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
         required: false
@@ -71,7 +67,6 @@ jobs:
       CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
       S3_BUCKET_APPS: ${{ secrets.S3_BUCKET_APPS }}
     with:
-      aws-secret-central: ${{ inputs.aws-secret-central }}
       type: ${{ inputs.type }}
       name: ${{ needs.upload-packages-to-npm.outputs.name }}
       version: ${{ needs.upload-packages-to-npm.outputs.version }}
@@ -121,5 +116,5 @@ jobs:
     secrets:
       MSTEAMS_WEBHOOK: ${{ secrets.MSTEAMS_WEBHOOK }}
     with:
-      failure_status: ${{ contains(needs.*.result, 'failure') }}
-      cancelled_status: ${{ contains(needs.*.result, 'cancelled') }}
+      failure-status: ${{ contains(needs.*.result, 'failure') }}
+      cancelled-status: ${{ contains(needs.*.result, 'cancelled') }}

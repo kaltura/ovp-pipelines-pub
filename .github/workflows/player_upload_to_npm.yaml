@@ -65,7 +65,7 @@ jobs:
 
       - name: Yarn run release
         run: |
-          if [ "${{ inputs.env }}" == "prod" ]; then
+          if [ "${{ inputs.env }}" = "prod" ]; then
             yarn run release
           else
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
@@ -90,7 +90,7 @@ jobs:
 
       - name: Yarn publish
         run: |
-          if [ "${{ inputs.env }}" == "prod" ]; then
+          if [ "${{ inputs.env }}" = "prod" ]; then
             yarn publish
           else
             yarn publish --tag canary

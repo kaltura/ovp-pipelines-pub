@@ -46,7 +46,7 @@ jobs:
 
       - name: Trigger uiconf deployment
         run: |
-          if [ "${{ inputs.stage }}" == "canary" ]; then
+          if [ "${{ inputs.stage }}" = "canary" ]; then
             generate_post_data='{"stage": "${{ inputs.stage }}", "env": "qa", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'
           else
             generate_post_data='{"stage": "${{ inputs.stage }}", "env": "${{ inputs.env }}", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'
@@ -56,7 +56,7 @@ jobs:
 
           status=$(jq -r '.status' response.json)
 
-          if [ "${status}" == "Success" ]; then
+          if [ "${status}" = "Success" ]; then
             echo "Success"
           else
             echo "Failed"

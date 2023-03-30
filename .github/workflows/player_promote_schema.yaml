@@ -78,9 +78,9 @@ jobs:
         run: |
           to=$(echo "${{ inputs.promotion-type }}" | awk -F ' --> ' '{print $2}' | awk -F '-' '{print $1}')
 
-          if [[ $to == "prod" ]]; then
+          if [[ $to = "prod" ]]; then
             env="prod"
-          elif [[ $to == "qa" ]]; then
+          elif [[ $to = "qa" ]]; then
             env="qa"
           else
             echo "Wrong env"
@@ -95,9 +95,9 @@ jobs:
         run: |
           to=$(echo "${{ inputs.promotion-type }}" | awk -F ' --> ' '{print $2}' | awk -F '-' '{print $2}')
 
-          if [[ "$to" == "beta" ]]; then
+          if [[ "$to" = "beta" ]]; then
             stage="beta"
-          elif [[ "$to" == "latest" ]]; then
+          elif [[ "$to" = "latest" ]]; then
             stage="latest"
           else
             echo "Wrong stage"

@@ -12,7 +12,7 @@ on:
         required: true
     inputs:
       env:
-        description: "env - example: 'qa/prod/all'"
+        description: "env - example: 'qa/prod'"
         required: false
         type: string
       type:

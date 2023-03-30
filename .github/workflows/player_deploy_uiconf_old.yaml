@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       env:
-        description: "env - example: 'qa/prod/all'"
+        description: "env - example: 'qa/prod'"
         required: false
         type: string
       version:

@@ -12,6 +12,16 @@ on:
         description: "list of package.json scripts - example: 'eslint flow test'"
         required: true
         type: string
+      run-on-ubuntu:
+        description: "run on ubuntu - example 'true/false'"
+        required: false
+        type: string
+        default: 'true'
+      run-on-macos:
+        description: "run on ubuntu - example 'true/false'"
+        required: false
+        type: string
+        default: 'false'
 
 jobs:
   running-tests:
@@ -20,6 +30,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         node-version: [ 17.x ]
     runs-on: ${{ matrix.os }}
+    if: ${{ matrix.os == 'macos-latest' && inputs.run-on-macos == 'true' }} || ${{ matrix.os == 'ubuntu-latest' && inputs.run-on-ubuntu == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

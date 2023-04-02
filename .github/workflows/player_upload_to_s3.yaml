@@ -75,9 +75,13 @@ jobs:
       contents: read
     steps:
       - name: Node.js version ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: Wandalen/wretry.action@master
         with:
-          node-version: ${{ matrix.node-version }}
+          action: actions/setup-node@v3
+          with: |
+            node-version: ${{ matrix.node-version }}
+          attempt_limit: 3
+          attempt_delay: 2000
 
       - name: Download plugin package
         run: |

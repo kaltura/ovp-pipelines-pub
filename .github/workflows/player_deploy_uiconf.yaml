@@ -69,7 +69,7 @@ jobs:
 
       - name: Trigger uiconf deployment
         run: |
-          echo ${{ steps.accounts.outputs.accounts }} | jq -c '.[]' | while read i; do
+          echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
             env_name="$(jq -r '.env' <<< "$i")"
             if [ ${env_name} = 'nvp1' ] || [ ${env_name} = 'nvq1' ]; then
               filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"

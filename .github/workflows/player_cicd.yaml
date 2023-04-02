@@ -46,12 +46,24 @@ on:
         description: "list of package.json scripts - example: 'eslint flow test'"
         required: true
         type: string
+      run-on-ubuntu:
+        description: "run on ubuntu - example 'true/false'"
+        required: false
+        type: string
+        default: 'true'
+      run-on-macos:
+        description: "run on ubuntu - example 'true/false'"
+        required: false
+        type: string
+        default: 'false'
 
 jobs:
   running-tests:
     uses: ./.github/workflows/player_tests.yaml
     with:
       yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
+      run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
+      run-on-macos: ${{ inputs.run-on-macos }}
   upload-packages-to-npm:
     needs: running-tests
     uses: ./.github/workflows/player_upload_to_npm.yaml

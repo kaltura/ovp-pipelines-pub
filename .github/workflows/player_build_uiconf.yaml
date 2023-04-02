@@ -127,7 +127,7 @@ jobs:
           echo "" >> "$tmp"
           echo "[defaultKdp]" >> "$tmp"
           echo "objectType = 6" >> "$tmp"
-          echo "widgets.versions.conf_vars = '{"version":"${{ steps.version.outputs.version }}"}'" >> "$tmp"
+          echo "widgets.versions.conf_vars = '{\"version\":\"${{ steps.version.outputs.version }}\"}'" >> "$tmp"
           echo "widgets.versions.name = playkitVersions" >> "$tmp"
           echo "widgets.versions.usage = list,${{ steps.version.outputs.version }},${{ inputs.schema-type }},${{ inputs.stage }}" >> "$tmp"
           echo "widgets.versions.config = '${jsonConf}'" >> "$tmp"

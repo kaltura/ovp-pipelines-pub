@@ -4,11 +4,11 @@ run-name: Promote schema
 on:
   workflow_call:
     secrets:
-      CENTRAL_ACCOUNT_ID:
+      PLAYER_CENTRAL_ACCOUNT_ID:
         required: true
-      SERVICES_ACCOUNT_ID:
+      PLAYER_SERVICES_ACCOUNT_ID:
         required: true
-      S3_BUCKET_DEPLOYMENT:
+      PLAYER_S3_BUCKET_DEPLOYMENT:
         required: true
     inputs:
       promotion-type:
@@ -40,7 +40,7 @@ jobs:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
           role-session-name: githubAction
           aws-region: "eu-central-1"
 
@@ -49,7 +49,7 @@ jobs:
           # Assume role
           export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
                       $(aws sts assume-role \
-                      --role-arn arn:aws:iam::${{ secrets.SERVICES_ACCOUNT_ID }}:role/nvp1-deployment-role \
+                      --role-arn arn:aws:iam::${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}:role/nvp1-deployment-role \
                       --role-session-name "nvp1-${{ github.run_id }}" \
                       --region "us-east-1" \
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
@@ -61,7 +61,7 @@ jobs:
           jsonNameFrom="player-${from}-${{ inputs.schema-type }}.json"
           jsonNameTo="player-${to}-${{ inputs.schema-type }}.json"
 
-          s3Path="s3://nvp1-${{ secrets.S3_BUCKET_DEPLOYMENT }}/player/schema"
+          s3Path="s3://nvp1-${{ secrets.PLAYER_S3_BUCKET_DEPLOYMENT }}/player/schema"
           aws s3 cp ${s3Path}/${jsonNameFrom} .
           cat ${jsonNameFrom} > ${jsonNameTo}
 

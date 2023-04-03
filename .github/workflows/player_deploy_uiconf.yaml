@@ -4,11 +4,9 @@ run-name: Deploy uiconf
 on:
   workflow_call:
     secrets:
-      JENKINS_TOKEN:
+      PLAYER_CENTRAL_ACCOUNT_ID:
         required: true
-      CENTRAL_ACCOUNT_ID:
-        required: true
-      LAMBDA_NAME:
+      PLAYER_LAMBDA_NAME:
         required: true
     inputs:
       stage:
@@ -42,7 +40,7 @@ jobs:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
           role-session-name: githubAction-${{ github.run_id }}
           aws-region: "eu-central-1"
 
@@ -61,7 +59,7 @@ jobs:
       - name: Get environments list
         id: accounts
         run: |
-          aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
+          aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
           echo $aws_envs | jq -c '.[]' | while read i; do account_id=$(jq -r '.account_id' <<< "$i"); echo "::add-mask::$account_id"; done
           accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" '{"env": $env}' ; done | jq -s -c .)
           echo $accounts
@@ -76,7 +74,7 @@ jobs:
               new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
               generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"
 
-              aws lambda invoke --function-name ${{ secrets.LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json > /dev/null 2>&1
+              aws lambda invoke --function-name ${{ secrets.PLAYER_LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json > /dev/null 2>&1
 
               status=$(jq -r '.status' response.json)
 

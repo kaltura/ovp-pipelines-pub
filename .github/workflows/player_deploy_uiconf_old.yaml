@@ -6,9 +6,9 @@ on:
     secrets:
       JENKINS_TOKEN:
         required: true
-      CENTRAL_ACCOUNT_ID:
+      PLAYER_CENTRAL_ACCOUNT_ID:
         required: true
-      LAMBDA_NAME:
+      PLAYER_LAMBDA_NAME:
         required: true
     inputs:
       stage:
@@ -40,7 +40,7 @@ jobs:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
           role-session-name: githubAction
           aws-region: "eu-central-1"
 
@@ -52,7 +52,7 @@ jobs:
             generate_post_data='{"stage": "${{ inputs.stage }}", "env": "${{ inputs.env }}", "version": "${{ inputs.version }}", "schema_type": "${{ inputs.schema-type }}", "token": "${{ secrets.JENKINS_TOKEN }}"}'
           fi
 
-          aws lambda invoke --function-name ${{ secrets.LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json
+          aws lambda invoke --function-name ${{ secrets.PLAYER_LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json
 
           status=$(jq -r '.status' response.json)
 

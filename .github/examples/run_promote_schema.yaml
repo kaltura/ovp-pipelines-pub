@@ -26,7 +26,7 @@ on:
 
 jobs:
   promotion:
-    uses: kaltura/ovp-pipelines-pub/.github/workflows/player_promote.yaml@v2.0.0
+    uses: kaltura/ovp-pipelines-pub/.github/workflows/player_promote.yaml@master
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
       PLAYER_SERVICES_ACCOUNT_ID: ${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}

@@ -12,6 +12,6 @@ jobs:
     if: always()
     uses: .kaltura/ovp-pipelines-pub/.github/workflows/notification.yaml@v2.0.0
     secrets:
-      MSTEAMS_WEBHOOK: ${{ secrets.MSTEAMS_WEBHOOK }}
+      PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
 
 

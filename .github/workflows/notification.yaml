@@ -4,7 +4,7 @@ run-name: Notification
 on:
   workflow_call:
     secrets:
-      MSTEAMS_WEBHOOK:
+      PLAYER_MSTEAMS_WEBHOOK:
         required: true
     inputs:
       failure-status:
@@ -74,7 +74,7 @@ jobs:
         uses: skitionek/notify-microsoft-teams@v1.0.4
         if: (always()) && (github.event_name == 'pull_request')
         with:
-          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
             {
               "@type": "MessageCard",
@@ -109,7 +109,7 @@ jobs:
         uses: skitionek/notify-microsoft-teams@v1.0.4
         if: (always()) && (github.event_name == 'push')
         with:
-          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
             {
               "@type": "MessageCard",
@@ -142,7 +142,7 @@ jobs:
         uses: skitionek/notify-microsoft-teams@v1.0.4
         if: (always()) && (github.event_name == 'workflow_dispatch')
         with:
-          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
             {
               "@type": "MessageCard",

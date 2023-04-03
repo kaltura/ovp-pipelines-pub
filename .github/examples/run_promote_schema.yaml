@@ -28,12 +28,11 @@ jobs:
   promotion:
     uses: kaltura/ovp-pipelines-pub/.github/workflows/player_promote.yaml@v2.0.0
     secrets:
-      CENTRAL_ACCOUNT_ID: ${{ secrets.CENTRAL_ACCOUNT_ID }}
-      SERVICES_ACCOUNT_ID: ${{ secrets.SERVICES_ACCOUNT_ID }}
-      S3_BUCKET_DEPLOYMENT: ${{ secrets.S3_BUCKET_DEPLOYMENT }}
-      JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
-      LAMBDA_NAME: ${{ secrets.LAMBDA_NAME }}
-      MSTEAMS_WEBHOOK: ${{ secrets.MSTEAMS_WEBHOOK }}
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_SERVICES_ACCOUNT_ID: ${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}
+      PLAYER_S3_BUCKET_DEPLOYMENT: ${{ secrets.PLAYER_S3_BUCKET_DEPLOYMENT }}
+      PLAYER_LAMBDA_NAME: ${{ secrets.PLAYER_LAMBDA_NAME }}
+      PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
     with:
       promotion-type: ${{ inputs.promotion-type }}
       schema-type: ${{ inputs.schema-type }}

@@ -47,7 +47,7 @@ jobs:
     needs: set-matrix
     strategy:
       matrix:
-        os: ${{ needs.set-matrix.outputs.matrix }}
+        os: ${{ fromJSON(needs.set-matrix.outputs.matrix) }}
         node-version: [ 17.x ]
     runs-on: ${{ matrix.os }}
     steps:

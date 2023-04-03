@@ -24,14 +24,31 @@ on:
         default: 'false'
 
 jobs:
+  set-matrix:
+    runs-on: [ ubuntu-latest ]
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: set matrix
+        id: set-matrix
+        run: |
+          if [ ${{ inputs.run-on-ubuntu }} = 'true' ] && [ ${{ inputs.run-on-macos }} = 'true' ]; then
+            echo "matrix=[\"ubuntu-latest\",\"macos-latest\"]" >> $GITHUB_OUTPUT
+          elif [ ${{ inputs.run-on-ubuntu }} = 'true' ]; then
+            echo "matrix=[\"ubuntu-latest\"]" >> $GITHUB_OUTPUT
+          elif [ ${{ inputs.run-on-macos }} = 'true' ]; then
+            echo "matrix=[\"macos-latest\"]" >> $GITHUB_OUTPUT
+          else
+            "matrix=[]" >> $GITHUB_OUTPUT
+          fi
+
   running-tests:
+    needs: set-matrix
     strategy:
       matrix:
-        # os: [ubuntu-latest, macos-latest]
-        os: [ubuntu-latest]
+        os: ${{ fromJSON(needs.set-matrix.outputs.matrix) }}
         node-version: [ 17.x ]
     runs-on: ${{ matrix.os }}
-    # if: ${{ (matrix.os == 'macos-latest' && inputs.run-on-macos == 'true') || (matrix.os == 'ubuntu-latest' && inputs.run-on-ubuntu == 'true') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

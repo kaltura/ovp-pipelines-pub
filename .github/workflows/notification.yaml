@@ -17,6 +17,11 @@ on:
         required: false
         type: string
         default: 'false'
+      is-test:
+        description: "is test or not - example: 'true/false'"
+        required: false
+        type: string
+        default: 'false'
 
 jobs:
   notification:
@@ -43,7 +48,6 @@ jobs:
           echo $status
           echo "status=${status}" >> $GITHUB_OUTPUT
       - name: Set image status url
-        if: always()
         id: image_url
         run: |
           if ${{ inputs.failure-status }} || ${{ inputs.cancelled-status }}; then
@@ -72,7 +76,7 @@ jobs:
           echo "inputs=${inputs}" >> $GITHUB_OUTPUT
       - name: Microsoft Teams Notification pull_request
         uses: skitionek/notify-microsoft-teams@v1.0.4
-        if: (always()) && (github.event_name == 'pull_request')
+        if: (always()) && (github.event_name == 'pull_request') && (${{ inputs.is-test }} != 'true')
         with:
           webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
@@ -170,6 +174,45 @@ jobs:
                 }, {
                   "name": "Workflow link",
                   "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                } ],
+                "markdown": true
+              } ]
+            }
+      - name: Microsoft Teams Notification Tests
+        uses: skitionek/notify-microsoft-teams@v1.0.4
+        if: (always()) && (github.event_name == 'pull_request') && (inputs.is-test == 'true')
+        with:
+          webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
+          raw: >-
+            {
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "summary": "Player Workflow",
+              "sections": [ {
+                "activityTitle": "Running tests on ${{ github.event.repository.name }}",
+                "activitySubtitle": "Assigned to: ${{ github.actor }}",
+                "activityImage": "${{ steps.image_url.outputs.image_url }}",
+                "facts": [ {
+                  "name": "Status",
+                  "value": "${{ steps.status.outputs.status }}"
+                }, {
+                  "name": "From branch",
+                  "value": "${{ github.head_ref }}"
+                }, {
+                  "name": "To branch",
+                  "value": "${{ github.base_ref }}"
+                }, {
+                  "name": "Commit ID",
+                  "value": "${{ github.sha }}"
+                }, {
+                  "name": "Pull request number",
+                  "value": "${{ github.event.number }}"
+                }, {
+                  "name": "Pull request title",
+                  "value": "${{ github.event.pull_request.title }}"
+                }, {
+                  "name": "Pull request link",
+                  "value": "${{ github.event.pull_request._links.html.href }}"
                 } ],
                 "markdown": true
               } ]

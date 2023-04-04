@@ -58,6 +58,8 @@ on:
 jobs:
   running-tests:
     uses: ./.github/workflows/player_tests.yaml
+    secrets:
+      PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
     with:
       yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
       run-on-ubuntu: ${{ inputs.run-on-ubuntu }}

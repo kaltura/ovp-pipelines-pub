@@ -3,6 +3,9 @@ run-name: Player And Plugin Tests
 
 on:
   workflow_call:
+    secrets:
+      PLAYER_MSTEAMS_WEBHOOK:
+        required: true
     inputs:
       yarn-upgrade-list:
         description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
@@ -81,3 +84,13 @@ jobs:
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
+  notification:
+    if: always()
+    uses: ./.github/workflows/notification.yaml
+    needs: [set-matrix, running-tests]
+    secrets:
+      PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
+    with:
+      failure-status: ${{ contains(needs.*.result, 'failure') }}
+      cancelled-status: ${{ contains(needs.*.result, 'cancelled') }}
+      is-test: 'true'

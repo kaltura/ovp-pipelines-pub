@@ -12,13 +12,3 @@ jobs:
     uses: kaltura/ovp-pipelines-pub/.github/workflows/player_tests.yaml@master
     with:
       yarn-run-to-execute: 'eslint flow test'
-  notification:
-    if: always()
-    uses: kaltura/ovp-pipelines-pub/.github/workflows/notification.yaml@master
-    needs: running-tests
-    secrets:
-      PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
-    with:
-      failure-status: ${{ contains(needs.*.result, 'failure') }}
-      cancelled-status: ${{ contains(needs.*.result, 'cancelled') }}
-      is-test: 'true'

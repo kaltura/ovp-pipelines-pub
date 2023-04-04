@@ -76,7 +76,7 @@ jobs:
           echo "inputs=${inputs}" >> $GITHUB_OUTPUT
       - name: Microsoft Teams Notification pull_request
         uses: skitionek/notify-microsoft-teams@v1.0.4
-        if: (always()) && (github.event_name == 'pull_request') && (${{ inputs.is-test }} != 'true')
+        if: (always()) && (github.event_name == 'pull_request')
         with:
           webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
@@ -180,7 +180,7 @@ jobs:
             }
       - name: Microsoft Teams Notification Tests
         uses: skitionek/notify-microsoft-teams@v1.0.4
-        if: (always()) && (github.event_name == 'pull_request') && (inputs.is-test == 'true')
+        if: (always()) && (inputs.is-test == 'true')
         with:
           webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-

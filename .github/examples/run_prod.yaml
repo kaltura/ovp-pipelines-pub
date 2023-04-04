@@ -3,13 +3,12 @@ name: Prod
 run-name: Prod
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
   canary-full-flow:
     uses: kaltura/ovp-pipelines-pub/.github/workflows/player_cicd.yaml@master
+    environment: Prod
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
       PLAYER_SERVICES_ACCOUNT_ID: ${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}

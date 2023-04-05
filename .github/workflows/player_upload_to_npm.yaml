@@ -6,6 +6,8 @@ on:
     secrets:
       PLAYER_NPM_TOKEN:
         required: true
+      PLAYER_GITHUB_BOT_TOKEN:
+        required: true
     inputs:
       yarn-upgrade-list:
         description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
@@ -40,7 +42,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
+        with:
+          token: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}
       - name: Node.js version ${{ matrix.node-version }}
         uses: Wandalen/wretry.action@master
         with:

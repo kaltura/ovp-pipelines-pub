@@ -19,6 +19,8 @@ on:
         required: true
       PLAYER_MSTEAMS_WEBHOOK:
         required: true
+      PLAYER_GITHUB_BOT_TOKEN:
+        required: true
     inputs:
       env:
         description: "env - example: 'qa/prod'"
@@ -77,6 +79,7 @@ jobs:
     uses: ./.github/workflows/player_upload_to_npm.yaml
     secrets:
       PLAYER_NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
+      PLAYER_GITHUB_BOT_TOKEN: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}
     with:
       env: ${{ inputs.env }}
       yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}

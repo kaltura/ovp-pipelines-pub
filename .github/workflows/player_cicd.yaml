@@ -56,6 +56,15 @@ on:
         default: 'false'
 
 jobs:
+  accept-prod:
+    if: ${{ inputs.env == 'prod' }}
+    runs-on: ubuntu-latest
+    name: Accept Prod
+    environment: Prod
+    steps:
+      - name: accept workflow on prod
+        run: |
+          echo "accepted"
   running-tests:
     uses: ./.github/workflows/player_tests.yaml
     with:

@@ -66,6 +66,7 @@ jobs:
         run: |
           echo "accepted"
   running-tests:
+    needs: accept-prod
     uses: ./.github/workflows/player_tests.yaml
     with:
       yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}

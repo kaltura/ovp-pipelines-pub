@@ -36,6 +36,7 @@ jobs:
         if: always()
         run: echo '${{ toJSON(job) }}'
       - name: Set status
+        if: always()
         id: status
         run: |
           if ${{ inputs.failure-status }}; then
@@ -48,6 +49,7 @@ jobs:
           echo $status
           echo "status=${status}" >> $GITHUB_OUTPUT
       - name: Set image status url
+        if: always()
         id: image_url
         run: |
           if ${{ inputs.failure-status }} || ${{ inputs.cancelled-status }}; then

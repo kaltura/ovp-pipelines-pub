@@ -109,7 +109,7 @@ jobs:
         if: ${{ inputs.env == 'prod' }}
         run: |
           yarn run pushTaggedRelease
-          conventional-github-releaser -p angular -t ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }} || true
+          npx conventional-github-releaser -p angular -t ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }} || true
 
       - name: Output name
         id: name

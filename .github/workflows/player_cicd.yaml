@@ -58,7 +58,14 @@ on:
         default: 'false'
 
 jobs:
+  running-tests:
+    uses: ./.github/workflows/player_tests.yaml
+    with:
+      yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
+      run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
+      run-on-macos: ${{ inputs.run-on-macos }}
   accept-prod:
+    needs: running-tests
     if: ${{ inputs.env == 'prod' }}
     runs-on: ubuntu-latest
     name: Accept Prod
@@ -67,15 +74,8 @@ jobs:
       - name: accept workflow on prod
         run: |
           echo "accepted"
-  running-tests:
-    needs: accept-prod
-    uses: ./.github/workflows/player_tests.yaml
-    with:
-      yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
-      run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
-      run-on-macos: ${{ inputs.run-on-macos }}
   upload-packages-to-npm:
-    needs: running-tests
+    needs: accept-prod
     uses: ./.github/workflows/player_upload_to_npm.yaml
     secrets:
       PLAYER_NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}

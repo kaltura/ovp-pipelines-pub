@@ -3,7 +3,9 @@ name: Canary Full Flow
 run-name: Canary Full Flow
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - master
 

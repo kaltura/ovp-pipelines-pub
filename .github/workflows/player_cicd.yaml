@@ -76,6 +76,7 @@ jobs:
       run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
       run-on-macos: ${{ inputs.run-on-macos }}
   upload-packages-to-npm:
+    if: (always() && needs.running-tests.result == 'success')
     needs: running-tests
     uses: ./.github/workflows/player_upload_to_npm.yaml
     secrets:
@@ -85,6 +86,7 @@ jobs:
       env: ${{ inputs.env }}
       yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}
   upload-to-s3:
+    if: (always() && needs.upload-packages-to-npm.result == 'success')
     needs: upload-packages-to-npm
     uses: ./.github/workflows/player_upload_to_s3.yaml
     secrets:
@@ -97,6 +99,7 @@ jobs:
       version: ${{ needs.upload-packages-to-npm.outputs.version }}
       full-npm-name: ${{ needs.upload-packages-to-npm.outputs.full-npm-name }}
   update-schema:
+    if: (always() && needs.upload-to-s3.result == 'success')
     needs: [upload-to-s3, upload-packages-to-npm]
     uses: ./.github/workflows/player_update_schema.yaml
     secrets:
@@ -110,7 +113,7 @@ jobs:
       name: ${{ needs.upload-packages-to-npm.outputs.name }}
       version: ${{ needs.upload-packages-to-npm.outputs.version }}
   build-uiconf:
-    if: ${{ inputs.stage == 'canary' }}
+    if: (always() && needs.update-schema.result == 'success' && ${{ inputs.stage == 'canary' }})
     needs: [update-schema, upload-to-s3, upload-packages-to-npm]
     uses: ./.github/workflows/player_build_uiconf.yaml
     secrets:
@@ -121,7 +124,7 @@ jobs:
       stage: ${{ inputs.stage }}
       schema-type: ${{ inputs.schema-type }}
   deploy-uiconf:
-    if: ${{ inputs.stage == 'canary' }}
+    if: (always() && needs.build-uiconf.result == 'success' && ${{ inputs.stage == 'canary' }})
     needs: [ build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm ]
     uses: ./.github/workflows/player_deploy_uiconf.yaml
     secrets:

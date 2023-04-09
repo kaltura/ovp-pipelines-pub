@@ -38,7 +38,7 @@ jobs:
       env: ${{ steps.env.outputs.env }}
     steps:
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
           role-session-name: githubAction

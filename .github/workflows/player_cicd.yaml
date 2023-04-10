@@ -113,7 +113,7 @@ jobs:
       name: ${{ needs.upload-packages-to-npm.outputs.name }}
       version: ${{ needs.upload-packages-to-npm.outputs.version }}
   build-uiconf:
-    if: (always() && needs.update-schema.result == 'success' && ${{ inputs.stage == 'canary' }})
+    if: (always() && needs.update-schema.result == 'success' && inputs.stage == 'canary')
     needs: [update-schema, upload-to-s3, upload-packages-to-npm]
     uses: ./.github/workflows/player_build_uiconf.yaml
     secrets:
@@ -124,7 +124,7 @@ jobs:
       stage: ${{ inputs.stage }}
       schema-type: ${{ inputs.schema-type }}
   deploy-uiconf:
-    if: (always() && needs.build-uiconf.result == 'success' && ${{ inputs.stage == 'canary' }})
+    if: (always() && needs.build-uiconf.result == 'success' && inputs.stage == 'canary')
     needs: [ build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm ]
     uses: ./.github/workflows/player_deploy_uiconf.yaml
     secrets:

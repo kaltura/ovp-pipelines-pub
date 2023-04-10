@@ -59,15 +59,6 @@ jobs:
           fi
           echo $image_url
           echo "image_url=${image_url}" >> $GITHUB_OUTPUT
-      - name: Message
-        if: (always()) && (github.event_name == 'push')
-        id: message
-        run: |
-          message="${{ github.event.head_commit.message }}"
-
-          echo 'message<<EOF' >> $GITHUB_OUTPUT
-          echo "$message" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
       - name: Inputs
         if: (always()) && (github.event_name == 'workflow_dispatch')
         id: inputs
@@ -103,7 +94,7 @@ jobs:
                   "value": "${{ github.event.number }}"
                 }, {
                   "name": "Pull request title",
-                  "value": "${{ github.event.pull_request.title }}"
+                  "value": ${{ toJson(github.event.pull_request.title) }}
                 }, {
                   "name": "Pull request link",
                   "value": "${{ github.event.pull_request._links.html.href }}"
@@ -133,7 +124,7 @@ jobs:
                   "value": "${{ github.sha }}"
                 }, {
                   "name": "Commit message",
-                  "value": "${{ steps.message.outputs.message }}"
+                  "value": ${{ toJson(github.event.head_commit.message) }}
                 }, {
                   "name": "workflow run id",
                   "value": "${{ github.run_number }}"
@@ -211,7 +202,7 @@ jobs:
                   "value": "${{ github.event.number }}"
                 }, {
                   "name": "Pull request title",
-                  "value": "${{ github.event.pull_request.title }}"
+                  "value": ${{ toJson(github.event.pull_request.title) }}
                 }, {
                   "name": "Pull request link",
                   "value": "${{ github.event.pull_request._links.html.href }}"

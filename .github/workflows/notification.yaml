@@ -160,7 +160,7 @@ jobs:
                   "value": "${{ github.ref_name }}"
                 }, {
                   "name": "Inputs",
-                  "value": "${{ steps.inputs.outputs.inputs }}"
+                  "value": ${{ toJson(steps.inputs.outputs.inputs) }}
                 }, {
                   "name": "workflow run id",
                   "value": "${{ github.run_number }}"

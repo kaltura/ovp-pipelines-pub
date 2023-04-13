@@ -1,4 +1,4 @@
-## CI/CD
+## QA/Prod Beta/Latest CD
 name: Promotion
 run-name: Promotion ${{ inputs.promotion-type }} on ${{ inputs.schema-type }} ${{ inputs.uiconf-new-version }}
 

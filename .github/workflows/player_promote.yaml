@@ -51,7 +51,7 @@ jobs:
       env: ${{ needs.promote-schema.outputs.env }}
       schema-type: ${{ inputs.schema-type }}
       uiconf-new-version: ${{ inputs.uiconf-new-version }}
-  deploy-uiconf:
+  :
     needs: [ promote-schema, build-uiconf ]
     uses: ./.github/workflows/player_deploy_uiconf.yaml
     secrets:
@@ -66,7 +66,7 @@ jobs:
   notification:
     if: always()
     uses: ./.github/workflows/notification.yaml
-    needs: [ deploy-uiconf, build-uiconf, update-schema ]
+    needs: [ promote-schema, build-uiconf, deploy-uiconf ]
     secrets:
       PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
     with:

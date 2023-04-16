@@ -62,13 +62,14 @@ jobs:
           jsonNameTo="player-${to}-${{ inputs.schema-type }}.json"
 
           s3Path="s3://nvp1-${{ secrets.PLAYER_S3_BUCKET_DEPLOYMENT }}/player/schema"
+
+          echo "All the versions before the changes on ${jsonNameTo}:"
+          aws s3 cp ${s3Path}/${jsonNameTo} .
+          cat ${jsonNameTo}
+
+          echo "All the versions after the changes on ${jsonNameTo}:"
           aws s3 cp ${s3Path}/${jsonNameFrom} .
           cat ${jsonNameFrom} > ${jsonNameTo}
-
-          echo "copy from file ${jsonNameFrom}:"
-          cat ${jsonNameFrom}
-
-          echo "copy to file ${jsonNameTo}:"
           cat ${jsonNameTo}
 
           aws s3 cp ${jsonNameTo} ${s3Path}/

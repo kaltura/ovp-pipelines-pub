@@ -116,7 +116,11 @@ jobs:
         run: |
           packageName=$(npx -c 'echo "$npm_package_name"')
           shortName=$(echo "${packageName}"| sed -e 's/@playkit-js\///g' -e 's/playkit-js-//g')
-          name="playkit-${shortName}"
+          if [ "${shortName}" = "playkit-js" ]; then
+            name="playkit"
+          else
+            name="playkit-${shortName}"
+          fi
           echo $name
           echo "name=${name}" >> $GITHUB_OUTPUT
 

@@ -16,7 +16,7 @@ on:
         required: false
         type: string
       type:
-        description: "choose player or plugin - example: 'plugin'"
+        description: "choose player or plugin or dependency - example: 'plugin'"
         required: true
         type: string
       schema-type:
@@ -31,6 +31,11 @@ on:
         description: "version - example: '2.3.5-canary.5-39e87cf'"
         required: true
         type: string
+      player-type:
+        description: "player type - example 'ovp tv'"
+        required: false
+        type: string
+
 
 env:
   PLAYERS: "ovp tv"
@@ -76,7 +81,7 @@ jobs:
           if [ "${{ inputs.type }}" = "plugin" ]; then
             jq '."'"${{ inputs.name }}"'" = "'"${{ inputs.version }}"'"' ${jsonName} > "$tmp" && mv "$tmp" ${jsonName}
           elif [ "${{ inputs.type }}" = "player" ]; then
-            for player in ${{ env.PLAYERS }}; do
+            for player in ${{ inputs.player-type }}; do
               jq '."'"kaltura-${player}-player"'" = "'"${{ inputs.version }}"'"' ${jsonName} > "$tmp" && mv "$tmp" ${jsonName}
             done
           else

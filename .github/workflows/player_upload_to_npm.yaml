@@ -91,7 +91,8 @@ jobs:
           rm CHANGELOG.mdE
 
       - name: Yarn run build
-        run: yarn run build
+        run: |
+          yarn run build || echo "NODE_OPTIONS=" >> $GITHUB_ENV; yarn run build
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 

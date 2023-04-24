@@ -84,7 +84,7 @@ jobs:
             echo "NODE_OPTIONS=openssl-legacy-provider" >> $GITHUB_ENV
           fi
           for command in ${{ inputs.yarn-run-to-execute }}; do
-            yarn run $command || echo "NODE_OPTIONS=" >> $GITHUB_ENV; yarn run $command
+            yarn run $command
           done
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"

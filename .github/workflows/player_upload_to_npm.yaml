@@ -17,6 +17,11 @@ on:
         description: "env - example: 'qa/prod'"
         required: false
         type: string
+      enabled-openssl-legacy-provider:
+        description: "enable openssl-legacy-provider - example 'true/false'"
+        required: false
+        type: string
+        default: 'true'
     outputs:
       name:
         description: "name"
@@ -92,9 +97,10 @@ jobs:
 
       - name: Yarn run build
         run: |
-          yarn run build || echo "NODE_OPTIONS=" >> $GITHUB_ENV; yarn run build
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+          if [ "${{ inputs.enabled-openssl-legacy-provider }}" = "true" ]; then
+            echo "NODE_OPTIONS=openssl-legacy-provider" >> $GITHUB_ENV
+          fi
+          yarn run build
 
       - name: Yarn publish
         run: |

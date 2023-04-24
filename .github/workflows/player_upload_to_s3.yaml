@@ -14,7 +14,7 @@ on:
         required: false
         type: string
       type:
-        description: "choose player or plugin - example: 'plugin'"
+        description: "choose player or plugin or dependency - example: 'plugin'"
         required: true
         type: string
       name:
@@ -29,9 +29,10 @@ on:
         description: "full-npm-name"
         required: true
         type: string
-
-env:
-  PLAYERS: "ovp tv"
+      player-type:
+        description: "player type - example 'ovp tv'"
+        required: false
+        type: string
 
 jobs:
   get-accounts:
@@ -166,7 +167,7 @@ jobs:
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
 
-          for player in ${{ env.PLAYERS }}; do
+          for player in ${{ inputs.player-type }}; do
             s3Path="s3://${{ matrix.env }}-${{ secrets.PLAYER_S3_BUCKET_APPS }}/bundler/playkit/modules/kaltura-${player}-player/${{ inputs.version }}"
             aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "kaltura-${player}-player.js*"
             aws s3 ls ${s3Path}/

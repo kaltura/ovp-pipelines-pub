@@ -101,10 +101,12 @@ jobs:
             echo "NODE_OPTIONS=openssl-legacy-provider" >> $GITHUB_ENV
           fi
           yarn run build
+          ls -la
 
       - name: Yarn publish
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
+            ls -la
             yarn publish
           else
             yarn publish --tag canary

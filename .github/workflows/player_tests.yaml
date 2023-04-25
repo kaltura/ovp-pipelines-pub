@@ -81,7 +81,7 @@ jobs:
       - name: Yarn run ${{ inputs.yarn-run-to-execute }}
         run: |
           if [ "${{ inputs.enabled-openssl-legacy-provider }}" = "true" ]; then
-            echo "NODE_OPTIONS=\"--openssl-legacy-provider\"" >> $GITHUB_ENV
+            echo "NODE_OPTIONS=--openssl-legacy-provider" >> $GITHUB_ENV
           fi
           for command in ${{ inputs.yarn-run-to-execute }}; do
             yarn run $command

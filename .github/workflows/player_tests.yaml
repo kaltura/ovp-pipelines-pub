@@ -22,11 +22,6 @@ on:
         required: false
         type: string
         default: 'false'
-      enabled-openssl-legacy-provider:
-        description: "enable openssl-legacy-provider - example 'true/false'"
-        required: false
-        type: string
-        default: 'true'
 
 jobs:
   set-matrix:
@@ -80,9 +75,8 @@ jobs:
         run: yarn install
       - name: Yarn run ${{ inputs.yarn-run-to-execute }}
         run: |
-          if [ "${{ inputs.enabled-openssl-legacy-provider }}" = "true" ]; then
-            echo "NODE_OPTIONS=--openssl-legacy-provider" >> $GITHUB_ENV
-          fi
           for command in ${{ inputs.yarn-run-to-execute }}; do
             yarn run $command
           done
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"

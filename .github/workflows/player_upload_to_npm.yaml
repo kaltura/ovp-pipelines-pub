@@ -17,11 +17,6 @@ on:
         description: "env - example: 'qa/prod'"
         required: false
         type: string
-      enabled-openssl-legacy-provider:
-        description: "enable openssl-legacy-provider - example 'true/false'"
-        required: false
-        type: string
-        default: 'true'
     outputs:
       name:
         description: "name"
@@ -96,17 +91,13 @@ jobs:
           rm CHANGELOG.mdE
 
       - name: Yarn run build
-        run: |
-          if [ "${{ inputs.enabled-openssl-legacy-provider }}" = "true" ]; then
-            echo "NODE_OPTIONS=--openssl-legacy-provider" >> $GITHUB_ENV
-          fi
-          yarn run build
-          ls -la
+        run: yarn run build
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Yarn publish
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
-            ls -la
             yarn publish
           else
             yarn publish --tag canary

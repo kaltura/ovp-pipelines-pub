@@ -94,6 +94,7 @@ jobs:
     with:
       env: ${{ inputs.env }}
       yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}
+      enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
   upload-to-s3:
     if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
     needs: upload-packages-to-npm

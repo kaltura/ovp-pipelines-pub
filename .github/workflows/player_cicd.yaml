@@ -60,6 +60,11 @@ on:
         description: "player type - example 'ovp tv'"
         required: false
         type: string
+      enabled-openssl-legacy-provider:
+        description: "enable the NODE_OPTIONS --openssl-legacy-provider - example: 'ture/false'"
+        required: false
+        type: string
+        default: 'true'
 
 jobs:
   accept-prod:
@@ -89,6 +94,7 @@ jobs:
     with:
       env: ${{ inputs.env }}
       yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}
+      enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
   upload-to-s3:
     if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
     needs: upload-packages-to-npm

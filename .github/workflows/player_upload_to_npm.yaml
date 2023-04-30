@@ -17,6 +17,11 @@ on:
         description: "env - example: 'qa/prod'"
         required: false
         type: string
+      enabled-openssl-legacy-provider:
+        description: "enable the NODE_OPTIONS --openssl-legacy-provider - example: 'ture/false'"
+        required: false
+        type: string
+        default: 'true'
     outputs:
       name:
         description: "name"
@@ -93,9 +98,14 @@ jobs:
           rm CHANGELOG.mdE
 
       - name: Yarn run build
+        if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: yarn run build
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+
+      - name: Yarn run build
+        if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
+        run: yarn run build
 
       - name: Yarn publish
         run: |

@@ -69,7 +69,7 @@ jobs:
           echo "inputs=${inputs}" >> $GITHUB_OUTPUT
       - name: Microsoft Teams Notification pull_request
         uses: skitionek/notify-microsoft-teams@v1.0.4
-        if: (always()) && (github.event_name == 'pull_request')
+        if: (always() && github.event_name == 'pull_request' && steps.status.outputs.status != 'success')
         with:
           webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
@@ -104,7 +104,7 @@ jobs:
             }
       - name: Microsoft Teams Notification push
         uses: skitionek/notify-microsoft-teams@v1.0.4
-        if: (always()) && (github.event_name == 'push')
+        if: (always() && github.event_name == 'push' && steps.status.outputs.status != 'success')
         with:
           webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
@@ -137,7 +137,7 @@ jobs:
             }
       - name: Microsoft Teams Notification workflow_dispatch
         uses: skitionek/notify-microsoft-teams@v1.0.4
-        if: (always()) && (github.event_name == 'workflow_dispatch')
+        if: (always() && github.event_name == 'workflow_dispatch' && steps.status.outputs.status != 'success')
         with:
           webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-
@@ -173,7 +173,7 @@ jobs:
             }
       - name: Microsoft Teams Notification Tests
         uses: skitionek/notify-microsoft-teams@v1.0.4
-        if: (always()) && (inputs.is-test == 'true')
+        if: (always() && inputs.is-test == 'true' && steps.status.outputs.status != 'success')
         with:
           webhook_url: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
           raw: >-

@@ -60,6 +60,11 @@ on:
         description: "player type - example 'ovp tv'"
         required: false
         type: string
+      enabled-openssl-legacy-provider:
+        description: "enable the NODE_OPTIONS --openssl-legacy-provider - example: 'ture/false'"
+        required: false
+        type: string
+        default: 'true'
 
 jobs:
   accept-prod:

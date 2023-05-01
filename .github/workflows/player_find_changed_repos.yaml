@@ -27,4 +27,5 @@ jobs:
             cd ${line}
             ls -la
             cd ${my_dir}
+            rm -rf ${line}
           done < player-dependencies.txt

@@ -97,7 +97,7 @@ jobs:
           rm package.jsonE
           rm CHANGELOG.mdE
 
-      - name: Yarn run build
+      - name: Yarn run build with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
           yarn run build
@@ -105,13 +105,13 @@ jobs:
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
-      - name: Yarn run build
+      - name: Yarn run build without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
           yarn run build
           ls -la dist/
 
-      - name: Yarn publish
+      - name: Npm publish
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm publish .
@@ -120,6 +120,7 @@ jobs:
           fi
         env:
           NPM_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
 
       - name: Yarn run pushTaggedRelease and create github release
         if: ${{ inputs.env == 'prod' }}

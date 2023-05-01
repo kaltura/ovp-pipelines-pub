@@ -13,20 +13,18 @@ jobs:
       - name: Repositories that have changed
         run: |
           pkg_version() {
-              echo `node -p "require('./package.json').version;"`
+              echo $(node -p "require('./package.json').version;")
           }
 
           pkg_modified() {
-              prev_version_commit=`git log --oneline | fgrep "$(pkg_version)" | awk '{print $1}'`
-              echo `git log --oneline $prev_version_commit..head | egrep "(fix|feat)\((FEC|FEV)-\d+\):"`
+              prev_version_commit=$(git log --oneline | fgrep "$(pkg_version)" | awk '{print $1}')
+              echo $(git log --oneline $prev_version_commit..HEAD | egrep "(fix|feat)\((FEC|FEV)-\d+\):")
           }
 
           my_dir=$(pwd)
           while read line; do
             git clone https://github.com/${line}.git ${line} > /dev/null 2>&1
             cd ${line}
-            if [[ -n "$(pkg_modified)" ]]; then
-              echo "https://github.com/${line}"
-            fi
-            cd $(pwd)
+            ls -la
+            cd ${my_dir}
           done < player-dependencies.txt

@@ -99,13 +99,17 @@ jobs:
 
       - name: Yarn run build
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
-        run: yarn run build
+        run: |
+          yarn run build
+          ls -la dist/
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Yarn run build
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
-        run: yarn run build
+        run: |
+          yarn run build
+          ls -la dist/
 
       - name: Yarn publish
         run: |

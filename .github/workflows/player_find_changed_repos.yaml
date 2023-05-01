@@ -35,5 +35,4 @@ jobs:
               echo "https://github.com/${line}"
             fi
             cd ${my_dir}
-            rm -rf ${line}
           done < player-dependencies.txt

@@ -28,11 +28,10 @@ jobs:
 
           my_dir=$(pwd)
           while read line; do
-            git clone https://github.com/${line}.git ${line} > /dev/null 2>&1
+            git clone https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/${line}.git ${line} > /dev/null 2>&1
             cd ${line}
-            echo ${line}
             if [[ -n "$(pkg_modified)" ]]; then
-              echo "https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/${line}"
+              echo "https://github.com/${line}"
             fi
             cd ${my_dir}
             rm -rf ${line}

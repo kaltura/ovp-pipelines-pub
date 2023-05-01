@@ -28,5 +28,8 @@ jobs:
 
           git clone https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/kaltura/playkit-js-ui.git kaltura/playkit-js-ui > /dev/null 2>&1
           cd kaltura/playkit-js-ui
+          echo "dor"
+          git log --oneline d6ff7ab..HEAD | egrep "(fix|feat)\((FEC|FEV)-\d+\):"
+          echo "dor"
           ls -la
           git log

@@ -9,7 +9,7 @@ jobs:
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
       - name: Repositories that have changed
         run: |
           pkg_version() {
@@ -30,5 +30,4 @@ jobs:
             fi
             cd ${my_dir}
             rm -rf ${line}
-            sleep 2
           done < player-dependencies.txt

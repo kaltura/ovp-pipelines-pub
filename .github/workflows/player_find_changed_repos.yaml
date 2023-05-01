@@ -3,6 +3,10 @@ run-name: Find Changed Repos
 
 on:
   workflow_call:
+    secrets:
+      PLAYER_GITHUB_BOT_TOKEN:
+        required: true
+
 
 jobs:
   find-changed-repos:
@@ -26,7 +30,7 @@ jobs:
             git clone https://github.com/${line}.git ${line} > /dev/null 2>&1
             cd ${line}
             if [[ -n "$(pkg_modified)" ]]; then
-              echo "https://github.com/${line}"
+              echo "https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/${line}"
             fi
             cd ${my_dir}
             rm -rf ${line}

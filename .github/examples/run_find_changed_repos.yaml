@@ -1,0 +1,12 @@
+## Find Changed Repos
+name: Run Find Changed Repos
+run-name: Run Find Changed Repos
+
+on:
+  workflow_dispatch:
+
+jobs:
+  find-changed-repos:
+    uses: kaltura/ovp-pipelines-pub/.github/workflows/player_find_changed_repos.yaml@fix-uiconf-deploy
+    secrets:
+      PLAYER_GITHUB_BOT_TOKEN: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}

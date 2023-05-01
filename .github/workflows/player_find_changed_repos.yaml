@@ -22,7 +22,7 @@ jobs:
 
           pkg_modified() {
               prev_version_commit=$(git log --oneline | fgrep "$(pkg_version)" | awk '{print $1}')
-              echo $(git log --oneline $prev_version_commit..head | egrep "(fix|feat)\((FEC|FEV)-\d+\):")
+              echo $(git log --oneline $prev_version_commit..HEAD | egrep "(fix|feat)\((FEC|FEV)-\d+\):")
           }
 
           my_dir=$(pwd)
@@ -35,4 +35,5 @@ jobs:
               echo "https://github.com/${line}"
             fi
             cd ${my_dir}
+            rm -rf ${line}
           done < player-dependencies.txt

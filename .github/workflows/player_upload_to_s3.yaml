@@ -148,8 +148,8 @@ jobs:
           s3Path="s3://${{ matrix.env }}-${{ secrets.PLAYER_S3_BUCKET_APPS }}/bundler/playkit/modules/${{ inputs.name }}/${{ inputs.version }}"
           aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "${{ inputs.name }}.js*"
           aws s3 ls ${s3Path}/
-          if [ -d 'translations' ]; then
-            aws s3 cp translations/ ${s3Path}/translations/ --recursive --include "*"
+          if [ -d 'package/translations' ]; then
+            aws s3 cp package/translations/ ${s3Path}/translations/ --recursive --include "*"
             aws s3 ls ${s3Path}/translations/
           fi
           jq '{version} + .kaltura' < package/package.json > package/manifest.json
@@ -171,8 +171,8 @@ jobs:
             s3Path="s3://${{ matrix.env }}-${{ secrets.PLAYER_S3_BUCKET_APPS }}/bundler/playkit/modules/kaltura-${player}-player/${{ inputs.version }}"
             aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "kaltura-${player}-player.js*"
             aws s3 ls ${s3Path}/
-            if [ -d 'translations' ]; then
-              aws s3 cp translations/ ${s3Path}/translations --recursive --include "*"
+            if [ -d 'package/translations' ]; then
+              aws s3 cp package/translations/ ${s3Path}/translations --recursive --include "*"
               aws s3 ls ${s3Path}/translations/
             fi
           done

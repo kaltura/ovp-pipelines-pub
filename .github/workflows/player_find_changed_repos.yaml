@@ -30,4 +30,5 @@ jobs:
             fi
             cd ${my_dir}
             rm -rf ${line}
+            sleep 2
           done < player-dependencies.txt

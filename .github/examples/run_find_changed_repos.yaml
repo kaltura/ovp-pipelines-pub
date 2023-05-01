@@ -1,0 +1,10 @@
+## Find Changed Repos
+name: Run Find Changed Repos
+run-name: Run Find Changed Repos
+
+on:
+  workflow_dispatch:
+
+jobs:
+  running-tests:
+    uses: kaltura/ovp-pipelines-pub/.github/workflows/player_find_changed_repos.yaml@master

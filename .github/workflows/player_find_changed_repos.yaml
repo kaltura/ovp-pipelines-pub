@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Repositories that have changed
         run: |
-          set -x
+          #!/bin/bash
           pkg_version() {
               echo $(node -p "require('./package.json').version;")
           }
@@ -31,5 +31,4 @@ jobs:
           echo "dor"
           git log --oneline d6ff7ab..HEAD | egrep "(fix|feat)\((FEC|FEV)-\d+\):"
           echo "dor"
-          ls -la
-          git log
+

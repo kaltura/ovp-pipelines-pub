@@ -114,7 +114,7 @@ jobs:
 
       - name: Npm publish
         run: |
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm publish .
           else

@@ -114,9 +114,9 @@ jobs:
       - name: Yarn publish
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
-            yarn publish .
+            npm publish .
           else
-            yarn publish . --tag canary
+            npm publish . --tag canary
           fi
         env:
           NPM_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}

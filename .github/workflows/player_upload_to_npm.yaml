@@ -114,12 +114,13 @@ jobs:
 
       - name: Npm publish
         run: |
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm publish .
           else
             npm publish . --tag canary
           fi
+          rm -rf .npmrc
         env:
           NPM_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}

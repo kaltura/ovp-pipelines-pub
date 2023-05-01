@@ -29,6 +29,8 @@ jobs:
           while read line; do
             git clone https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/${line}.git ${line} > /dev/null 2>&1
             cd ${line}
+            echo "${line}"
+            echo "$(pkg_modified)"
             if [[ -n "$(pkg_modified)" ]]; then
               echo "https://github.com/${line}"
             fi

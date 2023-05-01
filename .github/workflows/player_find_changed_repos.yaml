@@ -25,7 +25,7 @@ jobs:
           while read line; do
             git clone https://github.com/${line}.git ${line} > /dev/null 2>&1
             cd ${line}
-            ls -la
+            echo ${line}
             cd ${my_dir}
             rm -rf ${line}
           done < player-dependencies.txt

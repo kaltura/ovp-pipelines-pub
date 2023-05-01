@@ -16,19 +16,22 @@ jobs:
         uses: actions/checkout@v2
       - name: Repositories that have changed
         run: |
-          #!/bin/bash
           pkg_version() {
               echo $(node -p "require('./package.json').version;")
           }
 
           pkg_modified() {
               prev_version_commit=$(git log --oneline | fgrep "$(pkg_version)" | awk '{print $1}')
-              echo $(git log --oneline $prev_version_commit..HEAD | egrep "(fix|feat)\((FEC|FEV)-\d+\):")
+              echo $(git log --oneline $prev_version_commit..HEAD | egrep '(fix|feat)\((FEC|FEV)-[0-9]+\):')
           }
 
-          git clone https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/kaltura/playkit-js-ui.git kaltura/playkit-js-ui > /dev/null 2>&1
-          cd kaltura/playkit-js-ui
-          echo "dor"
-          git log --oneline d6ff7ab..HEAD | egrep '(fix|feat)\((FEC|FEV)-[0-9]+\):'
-          echo "dor"
-
+          my_dir=$(pwd)
+          while read line; do
+            git clone https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/${line}.git ${line} > /dev/null 2>&1
+            cd ${line}
+            if [[ -n "$(pkg_modified)" ]]; then
+              echo "https://github.com/${line}"
+            fi
+            cd ${my_dir}
+            rm -rf ${line}
+          done < player-dependencies.txt

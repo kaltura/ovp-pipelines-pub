@@ -7,6 +7,6 @@ on:
 
 jobs:
   find-changed-repos:
-    uses: kaltura/ovp-pipelines-pub/.github/workflows/player_find_changed_repos.yaml@fix-uiconf-deploy
+    uses: kaltura/ovp-pipelines-pub/.github/workflows/player_find_changed_repos.yaml@v1.0.0
     secrets:
       PLAYER_GITHUB_BOT_TOKEN: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}

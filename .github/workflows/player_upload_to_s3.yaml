@@ -53,12 +53,7 @@ jobs:
       - name: Get secret
         id: secret_name
         run: |
-          if [ "${{ inputs.env }}" = "prod" ]; then
-            secret_name="github-aws-all-accounts"
-          else
-            secret_name="github-aws-dev-qa-accounts"
-          fi
-
+          secret_name="s3-aws-all-accounts"
           echo $secret_name
           echo "secret_name=$secret_name" >> $GITHUB_OUTPUT
 
@@ -104,12 +99,7 @@ jobs:
       - name: Get secret
         id: secret_name
         run: |
-          if [ "${{ inputs.env }}" = "prod" ]; then
-            secret_name="github-aws-all-accounts"
-          else
-            secret_name="github-aws-dev-qa-accounts"
-          fi
-
+          secret_name="s3-aws-all-accounts"
           echo $secret_name
           echo "secret_name=$secret_name" >> $GITHUB_OUTPUT
 

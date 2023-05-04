@@ -69,9 +69,46 @@ jobs:
       - name: Yarn upgrade ${{ inputs.yarn-upgrade-list }}
         if: ${{ inputs.yarn-upgrade-list }}
         run: |
-          for command in ${{ inputs.yarn-upgrade-list }}; do
-            yarn upgrade $command
-          done
+          if [ "${{ inputs.env }}" = "prod" ]; then
+            my_dir=$(pwd)
+            for package in ${{ inputs.yarn-upgrade-list }}; do
+              # get old version
+              old_version=$(yarn list | grep "${package}@" | awk -F '@' '{print $3}')
+
+              # yarn upgrade package
+              yarn upgrade $package
+
+              # get new version
+              new_version=$(yarn list | grep "${package}@" | awk -F '@' '{print $3}')
+
+              # commit for version was changed
+              if [ "${old_version}" != "${new_version}" ]; then
+                # git clone
+                repo=$(echo "${package}"| sed -e 's/@playkit-js\///g')
+                git clone https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/kaltura/${repo}.git ../${repo} > /dev/null 2>&1
+                cd ../${repo}
+
+                # find if package has changed
+                package_version=$(echo $(node -p "require('./package.json').version;"))
+                package_version_commit=$(git log --oneline | fgrep "${package_version}" | awk '{print $1}')
+                package_modified_feat=$(git log --oneline $prev_version_commit..HEAD | egrep '(feat)\((FEC|FEV)-[0-9]+\):')
+                package_modified_fix=$(git log --oneline $prev_version_commit..HEAD | egrep '(fix)\((FEC|FEV)-[0-9]+\):')
+
+                cd ${my_dir}
+
+                if [[ -z "${package_modified_feat}" ]]; then
+                  git commit -m "feat: update ${repo} to [${new_version}](https://github.com/kaltura/${repo}/releases/tag/v${new_version})"
+                elif [[ -z "$(package_modified_fix)" ]]; then
+                  git commit -m "fix: update ${repo} to [${new_version}](https://github.com/kaltura/${repo}/releases/tag/v${new_version})"
+                else
+                fi
+              fi
+            done
+          else
+            for package in ${{ inputs.yarn-upgrade-list }}; do
+              yarn upgrade $package
+            done
+          fi
 
       - name: Yarn install
         run: yarn install

@@ -55,7 +55,6 @@ jobs:
           action: actions/setup-node@v3
           with: |
             node-version: ${{ matrix.node-version }}
-            registry-url: 'https://registry.npmjs.org'
             always-auth: true
             token: ${{ secrets.PLAYER_NPM_TOKEN }}
           attempt_limit: 3
@@ -150,6 +149,7 @@ jobs:
 
       - name: Npm publish
         run: |
+          npm set registry "https://registry.npmjs.org"
           echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm publish .

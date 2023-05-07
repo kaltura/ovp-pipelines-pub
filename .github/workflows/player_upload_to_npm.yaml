@@ -98,7 +98,7 @@ jobs:
 
                 if [[ -z "${package_modified_feat}" ]]; then
                   git commit -m "feat: update ${repo} to [${new_version}](https://github.com/kaltura/${repo}/releases/tag/v${new_version})"
-                elif [[ -z "$(package_modified_fix)" ]]; then
+                elif [[ -z "${package_modified_fix}" ]]; then
                   git commit -m "fix: update ${repo} to [${new_version}](https://github.com/kaltura/${repo}/releases/tag/v${new_version})"
                 else
                 fi

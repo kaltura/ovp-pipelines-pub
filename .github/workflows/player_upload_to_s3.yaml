@@ -61,7 +61,7 @@ jobs:
         id: accounts
         run: |
           aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
-          accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" '{"env": $env, "os": "ubuntu-latest", "node-version": "17.x"}' ; done | jq -s -c .)
+          accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" '{"env": $env, "os": "ubuntu-latest", "node-version": "18.x"}' ; done | jq -s -c .)
           echo $accounts
           echo "accounts={\"include\":$accounts}" >> $GITHUB_OUTPUT
 

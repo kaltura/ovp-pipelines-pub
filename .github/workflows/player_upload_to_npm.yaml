@@ -119,7 +119,7 @@ jobs:
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
         env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+          NODE_OPTIONS_NOT_NEEDED: "--openssl-legacy-provider"
 
       - name: Update version in package.json file
         run: |

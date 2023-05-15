@@ -47,7 +47,7 @@ jobs:
     strategy:
       matrix:
         os: ${{ fromJSON(needs.set-matrix.outputs.matrix) }}
-        node-version: [ 17.x ]
+        node-version: [ 14.x ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -72,11 +72,11 @@ jobs:
             yarn upgrade $command
           done
       - name: Yarn install
-        run: yarn install && yarn run tgz
+        run:  yarn run tgz && yarn install
       - name: Yarn run ${{ inputs.yarn-run-to-execute }}
         run: |
           for command in ${{ inputs.yarn-run-to-execute }}; do
             yarn run $command
           done
         env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+          NODE_OPTIONS_NOT_NEEDED: "--openssl-legacy-provider"

@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node-version: [ 17.x ]
+        node-version: [ 14.x ]
     runs-on: ${{ matrix.os }}
     outputs:
       name: ${{ steps.name.outputs.name }}
@@ -139,7 +139,7 @@ jobs:
           yarn run build
           ls -la dist/
         env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+          NODE_OPTIONS_NOT_NEEDED: "--openssl-legacy-provider"
 
       - name: Yarn run build without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}

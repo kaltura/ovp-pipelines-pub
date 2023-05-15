@@ -27,7 +27,7 @@ on:
         required: false
         type: string
       type:
-        description: "choose player or plugin or dependency - example: 'plugin/plugin'"
+        description: "choose player or plugin or dependency - example: 'plugin/player/dependency'"
         required: true
         type: string
       stage:

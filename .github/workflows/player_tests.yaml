@@ -72,7 +72,7 @@ jobs:
             yarn upgrade $command
           done
       - name: Yarn install
-        run:  yarn run tgz && yarn install
+        run:  node scripts/dist-tgz.js && yarn install
       - name: Yarn run ${{ inputs.yarn-run-to-execute }}
         run: |
           for command in ${{ inputs.yarn-run-to-execute }}; do

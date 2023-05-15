@@ -65,6 +65,16 @@ on:
         required: false
         type: string
         default: 'true'
+      node-version:
+        description: "which node version to use - example: '17.x/18.x'"
+        required: false
+        type: string
+        default: '17.x'        
+      os:
+        description: "which ubuntu version to use - example: 'ubuntu-latest'"
+        required: false
+        type: string
+        default: 'ubuntu-latest'       
 
 jobs:
   accept-prod:
@@ -95,6 +105,8 @@ jobs:
       env: ${{ inputs.env }}
       yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}
       enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
+      os: ${{ input.os }}
+      node-version: ${{ inputs.node-version }}
   upload-to-s3:
     if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
     needs: upload-packages-to-npm

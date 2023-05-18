@@ -125,7 +125,7 @@ jobs:
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
         env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+          NODE_OPTIONS_: "--openssl-legacy-provider"
 
       - name: Update version in package.json file
         run: |
@@ -145,7 +145,7 @@ jobs:
           yarn run build
           ls -la dist/
         env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+          NODE_OPTIONS_: "--openssl-legacy-provider"
 
       - name: Yarn run build without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}

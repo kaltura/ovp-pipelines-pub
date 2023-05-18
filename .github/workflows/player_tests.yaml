@@ -83,4 +83,4 @@ jobs:
             yarn run $command
           done
         env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+          NODE_OPTIONS_: "--openssl-legacy-provider"

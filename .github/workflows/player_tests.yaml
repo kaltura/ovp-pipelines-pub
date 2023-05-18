@@ -17,6 +17,11 @@ on:
         required: false
         type: string
         default: 'true'
+      enabled-openssl-legacy-provider:
+        description: "enable the NODE_OPTIONS --openssl-legacy-provider - example: 'ture/false'"
+        required: false
+        type: string
+        default: 'true'
       run-on-macos:
         description: "run on ubuntu - example 'true/false'"
         required: false
@@ -77,10 +82,17 @@ jobs:
           done
       - name: Yarn install
         run: yarn install
-      - name: Yarn run ${{ inputs.yarn-run-to-execute }}
+      - name: Yarn run ${{ inputs.yarn-run-to-execute }} with NODE_OPTIONS
+        if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
           for command in ${{ inputs.yarn-run-to-execute }}; do
             yarn run $command
           done
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+      - name: Yarn run ${{ inputs.yarn-run-to-execute }} without NODE_OPTIONS
+        if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
+        run: |
+          for command in ${{ inputs.yarn-run-to-execute }}; do
+            yarn run $command
+          done

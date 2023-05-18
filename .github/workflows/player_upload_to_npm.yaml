@@ -45,7 +45,7 @@ on:
 
 jobs:
   upload-to-npm:
-    runs-on: ${{ input.os }}
+    runs-on: ${{ inputs.os }}
     outputs:
       name: ${{ steps.name.outputs.name }}
       version: ${{ steps.version.outputs.version }}

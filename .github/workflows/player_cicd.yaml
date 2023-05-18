@@ -95,6 +95,7 @@ jobs:
       run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
       run-on-macos: ${{ inputs.run-on-macos }}
       node-version: ${{ inputs.node-version }}
+      enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
   upload-packages-to-npm:
     if: (always() && needs.running-tests.result == 'success')
     needs: running-tests

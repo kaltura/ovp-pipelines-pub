@@ -22,6 +22,16 @@ on:
         required: false
         type: string
         default: 'true'
+      node-version:
+        description: "which node version to use - example: '17.x/18.x'"
+        required: false
+        type: string
+        default: '17.x'        
+      os:
+        description: "which ubuntu version to use - example: 'ubuntu-latest'"
+        required: false
+        type: string
+        default: 'ubuntu-latest'  
     outputs:
       name:
         description: "name"
@@ -35,11 +45,7 @@ on:
 
 jobs:
   upload-to-npm:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node-version: [ 14.x ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ input.os }}
     outputs:
       name: ${{ steps.name.outputs.name }}
       version: ${{ steps.version.outputs.version }}
@@ -49,12 +55,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}
-      - name: Node.js version ${{ matrix.node-version }}
+      - name: Node.js version ${{ inputs.node-version }}
         uses: Wandalen/wretry.action@master
         with:
           action: actions/setup-node@v3
           with: |
-            node-version: ${{ matrix.node-version }}
+            node-version: ${{ inputs.node-version }}
             always-auth: true
             token: ${{ secrets.PLAYER_NPM_TOKEN }}
           attempt_limit: 3
@@ -109,7 +115,7 @@ jobs:
           fi
 
       - name: Yarn install
-        run:  yarn install
+        run: yarn install
 
       - name: Yarn run release
         run: |
@@ -119,7 +125,7 @@ jobs:
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
         env:
-          NODE_OPTIONS_NOT_NEEDED: "--openssl-legacy-provider"
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Update version in package.json file
         run: |
@@ -139,7 +145,7 @@ jobs:
           yarn run build
           ls -la dist/
         env:
-          NODE_OPTIONS_NOT_NEEDED: "--openssl-legacy-provider"
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Yarn run build without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}

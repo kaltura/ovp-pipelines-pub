@@ -27,7 +27,7 @@ on:
         required: false
         type: string
       type:
-        description: "choose player or plugin or dependency - example: 'plugin/plugin'"
+        description: "choose player or plugin or dependency - example: 'plugin/player/dependency'"
         required: true
         type: string
       stage:
@@ -65,6 +65,16 @@ on:
         required: false
         type: string
         default: 'true'
+      node-version:
+        description: "which node version to use - example: '17.x/18.x'"
+        required: false
+        type: string
+        default: '17.x'        
+      os:
+        description: "which ubuntu version to use - example: 'ubuntu-latest'"
+        required: false
+        type: string
+        default: 'ubuntu-latest'       
 
 jobs:
   accept-prod:
@@ -84,6 +94,7 @@ jobs:
       yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
       run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
       run-on-macos: ${{ inputs.run-on-macos }}
+      node-version: ${{ inputs.node-version }}
   upload-packages-to-npm:
     if: (always() && needs.running-tests.result == 'success')
     needs: running-tests
@@ -95,6 +106,8 @@ jobs:
       env: ${{ inputs.env }}
       yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}
       enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
+      os: ${{ input.os }}
+      node-version: ${{ inputs.node-version }}
   upload-to-s3:
     if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
     needs: upload-packages-to-npm

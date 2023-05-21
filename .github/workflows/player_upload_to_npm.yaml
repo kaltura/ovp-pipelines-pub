@@ -117,7 +117,8 @@ jobs:
       - name: Yarn install
         run: yarn install
 
-      - name: Yarn run release
+      - name: Yarn run release with NODE_OPTIONS
+        if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
             yarn run release
@@ -126,6 +127,15 @@ jobs:
           fi
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+
+      - name: Yarn run release without NODE_OPTIONS
+        if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
+        run: |
+          if [ "${{ inputs.env }}" = "prod" ]; then
+            yarn run release
+          else
+            yarn run release --prerelease canary --skip.commit=true --skip.tag=true
+          fi
 
       - name: Update version in package.json file
         run: |

@@ -110,7 +110,7 @@ jobs:
             done
           else
             for package in ${{ inputs.yarn-upgrade-list }}; do
-              yarn upgrade $package
+              yarn add $package --exact
             done
           fi
 

@@ -68,26 +68,24 @@ jobs:
       - name: Trigger uiconf deployment
         run: |
           echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
-            env_name="$(jq -r '.env' <<< "$i")"
-            if [ ${env_name} = 'nvp1' ] || [ ${env_name} = 'nvq1' ] || [ ${env_name} = 'nvd1' ]; then
-              filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
-              new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
-              generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"
+          env_name="$(jq -r '.env' <<< "$i")"
+          env_type="$(jq -r '.env_type' <<< "$i")
 
-              aws lambda invoke --function-name ${{ secrets.PLAYER_LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json > /dev/null 2>&1
+            filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
+            new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
+            generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"
 
-              status=$(jq -r '.status' response.json)
+            aws lambda invoke --function-name ${{ secrets.PLAYER_LAMBDA_NAME }} --payload "${generate_post_data}" --cli-binary-format raw-in-base64-out response.json > /dev/null 2>&1
 
-              echo "Running lambda on env ${env_name} finished:"
-              if [ "${status}" = "Success" ]; then
-                echo "Success"
-                jq -r '.' response.json
-              else
-                echo "Failed"
-                jq -r '.' response.json
-                exit 1
-              fi
+            status=$(jq -r '.status' response.json)
+
+            echo "Running lambda on env ${env_name} finished:"
+            if [ "${status}" = "Success" ]; then
+              echo "Success"
+              jq -r '.' response.json
             else
-              echo "no uiconf on ${env_name}"
+              echo "Failed"
+              jq -r '.' response.json
+              exit 1
             fi
           done

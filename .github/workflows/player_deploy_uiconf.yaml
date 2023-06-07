@@ -59,7 +59,7 @@ jobs:
           echo "$(jq -r -c '.[] | {env: .env, account_id: ("::add-mask::" + .account_id)}' <<< $aws_envs)"
           output=$(echo $aws_envs | jq -c '[.[] | {env: .env, env_type: .env_type}]')
 
-          echo "accounts=$output"
+          echo "accounts=$output" >> $GITHUB_OUTPUT
 
       - name: Trigger uiconf deployment
         run: |

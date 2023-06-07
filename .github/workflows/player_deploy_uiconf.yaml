@@ -69,7 +69,10 @@ jobs:
         run: |
           echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
             env_name="$(jq -r '.env' <<< "$i")"
-            if [ ${env_name} = 'nvp1' ] || [ ${env_name} = 'nvq1' ] || [ ${env_name} = 'nvq2' ] || [ ${env_name} = 'nvd1' ]; then
+            env_type="$(jq -r '.env_type' <<< "$i")"
+            if [[ "$env_type" = "prod" && "${{ inputs.stage }}" = "canary" ]]; then
+              continue
+            else
               filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
               new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
               generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"

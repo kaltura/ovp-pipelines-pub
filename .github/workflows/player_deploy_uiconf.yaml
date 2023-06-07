@@ -80,6 +80,7 @@ jobs:
               echo "invalid stage: ${{ inputs.stage }}"
               continue
             else
+              echo "Running lambda on env ${env_name}..."
               filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
               new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
               generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"

@@ -58,7 +58,7 @@ jobs:
           aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
           echo $aws_envs | jq -c '.[]' | while read i; do account_id=$(jq -r '.account_id' <<< "$i"); echo "::add-mask::$account_id"; done
           echo $aws_envs | jq -c '.[]' | while read i; do env=$(jq -r '.env' <<< "$i"); echo ":$env"; done
-          accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" '{"env": $env}' --arg env "$(jq -r '.env_type' <<< "$i")" '{"env_type": $env_type}' ; done | jq -s -c .)
+          accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" --arg env_type "$(jq -r '.env_type' <<< "$i")" '{"env": "$env", "env_type": $env_type}' ; done | jq -s -c .)
           #echo $accounts
           echo "accounts=$accounts" >> $GITHUB_OUTPUT
 

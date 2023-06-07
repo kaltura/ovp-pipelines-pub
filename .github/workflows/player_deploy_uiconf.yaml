@@ -70,7 +70,7 @@ jobs:
           echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
             env_name="$(jq -r '.env' <<< "$i")"
             env_type="$(jq -r '.env_type' <<< "$i")"
-            if ! [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
+            if [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
               echo "skipping prod env: ${env_name} for canary stage"
               continue
             elif ! [[ "$env_type" =~ ^(dev|qa|prod)$ ]]; then
@@ -89,13 +89,12 @@ jobs:
               status=$(jq -r '.status' response.json)
 
               echo "Running lambda on env ${env_name} finished:"
-              if [ "${status}" = "Success" ]; then
-                echo "Success"
-                jq -r '.' response.json
-              else
+              if ! [[ "$status" == "Success" ]]; then
                 echo "Failed"
                 jq -r '.' response.json
                 exit 1
               fi
+              echo "Success"
+              jq -r '.' response.json
             fi
           done

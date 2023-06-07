@@ -70,9 +70,16 @@ jobs:
           echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
             env_name="$(jq -r '.env' <<< "$i")"
             env_type="$(jq -r '.env_type' <<< "$i")"
-            if [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
+            if ! [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
+              echo "skipping prod env: ${env_name} for canary stage"
               continue
-            elif [[ "$env_type" == "qa" || "$env_type" == "dev" ]]; then
+            elif ! [[ "$env_type" =~ ^(dev|qa|prod)$ ]]; then
+              echo "invalid env_type: ${env_type} for env: ${env_name}"
+              continue
+            elif ! [[ "${{ inputs.stage }}" =~ ^(canary|beta|latest)$ ]]; then
+              echo "invalid stage: ${{ inputs.stage }}"
+              continue
+            else
               filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
               new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
               generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"
@@ -90,7 +97,5 @@ jobs:
                 jq -r '.' response.json
                 exit 1
               fi
-            else
-              echo "env_type for ${env_name} is not supported"
             fi
           done

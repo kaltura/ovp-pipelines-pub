@@ -56,7 +56,7 @@ jobs:
         id: accounts
         run: |
           aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
-          echo "$(jq -r -c '.[] | {env: .env, account_id: ("::add-mask::" + .account_id)}' <<< $aws_envs)"
+          echo "Processing environments: $(jq -r -c '[.[] | {env: .env}]' <<< $aws_envs)"
           output=$(echo $aws_envs | jq -c '[.[] | {env: .env, env_type: .env_type}]')
 
           echo "accounts=$output" >> $GITHUB_OUTPUT

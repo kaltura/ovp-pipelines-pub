@@ -72,7 +72,7 @@ jobs:
             env_type="$(jq -r '.env_type' <<< "$i")"
             if [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
               continue
-            else
+            elif [[ "$env_type" == "qa" || "$env_type" == "dev" ]]; then
               filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
               new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
               generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"
@@ -91,6 +91,6 @@ jobs:
                 exit 1
               fi
             else
-              echo "no uiconf on ${env_name}"
+              echo "env_type for ${env_name} is not supported"
             fi
           done

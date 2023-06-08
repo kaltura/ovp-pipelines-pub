@@ -66,6 +66,10 @@ jobs:
           echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
             env_name="$(jq -r '.env' <<< "$i")"
             env_type="$(jq -r '.env_type' <<< "$i")"
+            deploy_uiconf="$(jq -r '.deploy_uiconf' <<< "$i")"
+            if [[ "$deploy_uiconf" != "true" ]]; then
+              echo "skipping env: ${env_name} for deploy_uiconf: ${deploy_uiconf}"
+              continue
             if [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
               echo "skipping prod env: ${env_name} for canary stage"
               continue

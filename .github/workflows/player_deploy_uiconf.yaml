@@ -70,7 +70,7 @@ jobs:
             if [[ "$deploy_uiconf" != "true" ]]; then
               echo "skipping env: ${env_name} for deploy_uiconf: ${deploy_uiconf}"
               continue
-            if [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
+            elif [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
               echo "skipping prod env: ${env_name} for canary stage"
               continue
             elif ! [[ "$env_type" =~ ^(dev|qa|prod)$ ]]; then

@@ -47,11 +47,7 @@ jobs:
       - name: Get secret
         id: secret_name
         run: |
-          if [ "${{ inputs.env }}" = "prod" ]; then
-            secret_name="github-aws-all-accounts"
-          else
-            secret_name="github-aws-dev-qa-accounts"
-          fi
+          secret_name="github-aws-all-accounts"
 
           echo $secret_name
           echo "secret_name=$secret_name" >> $GITHUB_OUTPUT
@@ -60,16 +56,31 @@ jobs:
         id: accounts
         run: |
           aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
-          echo $aws_envs | jq -c '.[]' | while read i; do account_id=$(jq -r '.account_id' <<< "$i"); echo "::add-mask::$account_id"; done
-          accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" '{"env": $env}' ; done | jq -s -c .)
-          echo $accounts
-          echo "accounts=$accounts" >> $GITHUB_OUTPUT
+          echo "Processing environments: $(jq -r -c '[.[] | {env: .env}]' <<< $aws_envs)"
+          output=$(echo $aws_envs | jq -c '[.[] | {env: .env, env_type: .env_type, deploy_uiconf: .deploy_uiconf}]')
+
+          echo "accounts=$output" >> $GITHUB_OUTPUT
 
       - name: Trigger uiconf deployment
         run: |
           echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
             env_name="$(jq -r '.env' <<< "$i")"
-            if [ ${env_name} = 'nvp1' ] || [ ${env_name} = 'nvq1' ] || [ ${env_name} = 'nvd1' ]; then
+            env_type="$(jq -r '.env_type' <<< "$i")"
+            deploy_uiconf="$(jq -r '.deploy_uiconf' <<< "$i")"
+            if [[ "$deploy_uiconf" != "true" ]]; then
+              echo "skipping env: ${env_name} for deploy_uiconf: ${deploy_uiconf}"
+              continue
+            elif [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
+              echo "skipping prod env: ${env_name} for canary stage"
+              continue
+            elif ! [[ "$env_type" =~ ^(dev|qa|prod)$ ]]; then
+              echo "invalid env_type: ${env_type} for env: ${env_name}"
+              continue
+            elif ! [[ "${{ inputs.stage }}" =~ ^(canary|beta|latest)$ ]]; then
+              echo "invalid stage: ${{ inputs.stage }}"
+              continue
+            else
+              echo "Running lambda on env ${env_name}..."
               filter_tags="autodeploy,${{ inputs.schema-type }}_${{ inputs.stage }},${{ inputs.schema-type }}_list,${{ inputs.schema-type }},${{ inputs.stage }}"
               new_tags="autodeploy, ${{ inputs.schema-type }}_${{ inputs.stage }}, ${{ inputs.schema-type }}_list, ${{ inputs.version }}, ${{ inputs.schema-type }}, ${{ inputs.stage }}"
               generate_post_data="{\"secret_name\": \"${{ steps.secret_name.outputs.secret_name }}\", \"filter_tags\": \"${filter_tags}\", \"new_tags\": \"${new_tags}\", \"file_name\": \"${{ inputs.file-name }}\", \"env\": \"${env_name}\"}"
@@ -79,15 +90,12 @@ jobs:
               status=$(jq -r '.status' response.json)
 
               echo "Running lambda on env ${env_name} finished:"
-              if [ "${status}" = "Success" ]; then
-                echo "Success"
-                jq -r '.' response.json
-              else
+              if ! [[ "$status" == "Success" ]]; then
                 echo "Failed"
                 jq -r '.' response.json
                 exit 1
               fi
-            else
-              echo "no uiconf on ${env_name}"
+              echo "Success"
+              jq -r '.' response.json
             fi
           done

@@ -1,0 +1,173 @@
+## CI - Upload packages to NPM
+name: Full CICD
+run-name: Full CICD
+
+on:
+  workflow_call:
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID:
+        required: true
+      PLAYER_SERVICES_ACCOUNT_ID:
+        required: true
+      PLAYER_S3_BUCKET_DEPLOYMENT:
+        required: true
+      PLAYER_S3_BUCKET_APPS:
+        required: true
+      PLAYER_NPM_TOKEN:
+        required: true
+      PLAYER_LAMBDA_NAME:
+        required: true
+      PLAYER_MSTEAMS_WEBHOOK:
+        required: true
+      PLAYER_GITHUB_BOT_TOKEN:
+        required: true
+    inputs:
+      env:
+        description: "env - example: 'qa/prod'"
+        required: false
+        type: string
+      type:
+        description: "choose player or plugin or dependency - example: 'plugin/player/dependency'"
+        required: true
+        type: string
+      stage:
+        description: "build for specific type - example: 'canary/beta/latest'"
+        required: false
+        type: string
+      schema-type:
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+        required: true
+        type: string
+      yarn-upgrade-list:
+        description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
+        required: false
+        type: string
+      tests-yarn-run-to-execute:
+        description: "list of package.json scripts - example: 'eslint flow test'"
+        required: true
+        type: string
+      run-on-ubuntu:
+        description: "run on ubuntu - example 'true/false'"
+        required: false
+        type: string
+        default: 'true'
+      run-on-macos:
+        description: "run on ubuntu - example 'true/false'"
+        required: false
+        type: string
+        default: 'false'
+      player-type:
+        description: "player type - example 'ovp tv'"
+        required: false
+        type: string
+      enabled-openssl-legacy-provider:
+        description: "enable the NODE_OPTIONS --openssl-legacy-provider - example: 'ture/false'"
+        required: false
+        type: string
+        default: 'true'
+      node-version:
+        description: "which node version to use - example: '17.x/18.x'"
+        required: false
+        type: string
+        default: '17.x'        
+      os:
+        description: "which ubuntu version to use - example: 'ubuntu-latest'"
+        required: false
+        type: string
+        default: 'ubuntu-latest'       
+
+jobs:
+  accept-prod:
+    if: ${{ inputs.env == 'prod' }}
+    runs-on: ubuntu-latest
+    name: Accept Prod
+    environment: Prod
+    steps:
+      - name: accept workflow on prod
+        run: |
+          echo "accepted"
+  running-tests:
+    if: (always()) && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
+    needs: accept-prod
+    uses: ./.github/workflows/player_tests.yaml
+    with:
+      yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
+      run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
+      run-on-macos: ${{ inputs.run-on-macos }}
+      node-version: ${{ inputs.node-version }}
+      enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
+  upload-packages-to-npm:
+    if: (always() && needs.running-tests.result == 'success')
+    needs: running-tests
+    uses: ./.github/workflows/player_upload_to_npm.yaml
+    secrets:
+      PLAYER_NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
+      PLAYER_GITHUB_BOT_TOKEN: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}
+    with:
+      env: ${{ inputs.env }}
+      yarn-upgrade-list: ${{ inputs.yarn-upgrade-list }}
+      enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
+      os: ${{ inputs.os }}
+      node-version: ${{ inputs.node-version }}
+  upload-to-s3:
+    if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
+    needs: upload-packages-to-npm
+    uses: ./.github/workflows/player_upload_to_s3.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_S3_BUCKET_APPS: ${{ secrets.PLAYER_S3_BUCKET_APPS }}
+    with:
+      env: ${{ inputs.env }}
+      type: ${{ inputs.type }}
+      player-type: ${{ inputs.player-type }}
+      name: ${{ needs.upload-packages-to-npm.outputs.name }}
+      version: ${{ needs.upload-packages-to-npm.outputs.version }}
+      full-npm-name: ${{ needs.upload-packages-to-npm.outputs.full-npm-name }}
+  update-schema:
+    if: (always() && needs.upload-to-s3.result == 'success' && inputs.type != 'dependency')
+    needs: [upload-to-s3, upload-packages-to-npm]
+    uses: ./.github/workflows/player_update_schema.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_SERVICES_ACCOUNT_ID: ${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}
+      PLAYER_S3_BUCKET_DEPLOYMENT: ${{ secrets.PLAYER_S3_BUCKET_DEPLOYMENT }}
+    with:
+      env: ${{ inputs.env }}
+      type: ${{ inputs.type }}
+      player-type: ${{ inputs.player-type }}
+      schema-type: ${{ inputs.schema-type }}
+      name: ${{ needs.upload-packages-to-npm.outputs.name }}
+      version: ${{ needs.upload-packages-to-npm.outputs.version }}
+  build-uiconf:
+    if: (always() && needs.update-schema.result == 'success' && inputs.stage == 'canary' && inputs.type != 'dependency')
+    needs: [update-schema, upload-to-s3, upload-packages-to-npm]
+    uses: ./.github/workflows/player_build_uiconf.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_SERVICES_ACCOUNT_ID: ${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}
+      PLAYER_S3_BUCKET_DEPLOYMENT: ${{ secrets.PLAYER_S3_BUCKET_DEPLOYMENT }}
+    with:
+      stage: ${{ inputs.stage }}
+      schema-type: ${{ inputs.schema-type }}
+  deploy-uiconf:
+    if: (always() && needs.build-uiconf.result == 'success' && inputs.stage == 'canary' && inputs.type != 'dependency')
+    needs: [ build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm ]
+    uses: ./.github/workflows/player_deploy_uiconf.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_LAMBDA_NAME: ${{ secrets.PLAYER_LAMBDA_NAME }}
+    with:
+      stage: ${{ inputs.stage }}
+      env: ${{ inputs.env }}
+      version: ${{ needs.build-uiconf.outputs.version }}
+      schema-type: ${{ inputs.schema-type }}
+      file-name: ${{ needs.build-uiconf.outputs.file-name }}
+  notification:
+    if: always()
+    uses: ./.github/workflows/notification.yaml
+    needs: [ deploy-uiconf, build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm, running-tests ]
+    secrets:
+      PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
+    with:
+      failure-status: ${{ contains(needs.*.result, 'failure') }}
+      cancelled-status: ${{ contains(needs.*.result, 'cancelled') }}

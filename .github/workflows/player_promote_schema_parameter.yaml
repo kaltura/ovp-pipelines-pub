@@ -6,10 +6,6 @@ on:
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID:
         required: true
-      PLAYER_SERVICES_ACCOUNT_ID:
-        required: true
-      PLAYER_S3_BUCKET_DEPLOYMENT:
-        required: true
     inputs:
       promotion-type:
         description: "from - to"

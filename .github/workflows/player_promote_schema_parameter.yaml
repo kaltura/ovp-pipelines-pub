@@ -48,7 +48,9 @@ jobs:
       - name: Check Environment
         id: check-environment
         run: |
+          echo "Promotion type: ${PROMOTION_TYPE}"
           ENVIRONMENT=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
+          echo "Environment: ${ENVIRONMENT}"
           if [[ ${ENVIRONMENT} != @(prod|qa) ]]; then
               echo "Invalid environment type"
               exit 1

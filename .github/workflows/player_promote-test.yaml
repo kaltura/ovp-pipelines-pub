@@ -1,0 +1,51 @@
+## CD - Promote schema
+name: Promote
+run-name: Promote
+
+on:
+  workflow_call:
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID:
+        required: true
+      PLAYER_SERVICES_ACCOUNT_ID:
+        required: true
+      PLAYER_S3_BUCKET_DEPLOYMENT:
+        required: true
+      PLAYER_LAMBDA_NAME:
+        required: true
+      PLAYER_MSTEAMS_WEBHOOK:
+        required: true
+    inputs:
+      promotion-type:
+        type: string
+        required: true
+        description: "from - to"
+      schema-type:
+        type: string
+        required: true
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+      uiconf-new-version:
+        type: string
+        required: false
+        description: "not required - if no value is given it will increment the minor version - example 'from 1.00 to 1.01'"
+
+jobs:
+  promote-schema:
+    uses: ./.github/workflows/player_promote_schema_parameter.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_SERVICES_ACCOUNT_ID: ${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}
+      PLAYER_S3_BUCKET_DEPLOYMENT: ${{ secrets.PLAYER_S3_BUCKET_DEPLOYMENT }}
+    with:
+      promotion-type: ${{ inputs.promotion-type }}
+      schema-type: ${{ inputs.schema-type }}
+  deploy-kconf:
+    needs: promote-schema
+    uses: ./.github/workflows/player_deploy_kconf.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+    with:
+      stage: ${{ needs.promote-schema.outputs.stage }}
+      env: ${{ needs.promote-schema.outputs.env }}
+      schema-type: ${{ inputs.schema-type }}
+      uiconf-new-version: ${{ inputs.uiconf-new-version }}

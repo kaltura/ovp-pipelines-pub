@@ -44,12 +44,12 @@ jobs:
           role-session-name: githubAction
           aws-region: "eu-central-1"
           mask-aws-account-id: true
-
       - name: Check Environment
         id: check-environment
         run: |
-          echo "Promotion type: ${PROMOTION_TYPE}"
-          ENVIRONMENT=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
+          PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
+          PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
+          ENVIRONMENT=$(echo "${PROMOTION_TO}" | cut -d' ' -f3)
           echo "Environment: ${ENVIRONMENT}"
           if [[ ${ENVIRONMENT} != @(prod|qa) ]]; then
               echo "Invalid environment type"
@@ -61,6 +61,9 @@ jobs:
       - name: Check Stage
         id: check-stage
         run: |
+          PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
+          PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
+          ENVIRONMENT=$(echo "${PROMOTION_TO}" | cut -d' ' -f3)
           STAGE=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f2)
           if [[ ${STAGE} != @(beta|latest) ]]; then
               echo "Invalid stage type"

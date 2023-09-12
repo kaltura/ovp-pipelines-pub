@@ -56,7 +56,7 @@ jobs:
             echo "$1" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}'
           }
 
-          PRODUCT_NAME="${ENV_TYPE}-${STAGE}""
+          PRODUCT_NAME="${ENV_TYPE}-${STAGE}"
           newVersion="""
           if [[ ${STAGE} == "canary" ]]; then
             echo "canary"
@@ -79,8 +79,8 @@ jobs:
               aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
             fi
           fi
-          echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME} = ${newVersion}"
-          #aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --value "${newVersion}" --type String --overwrite
+          #echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME} = ${newVersion}"
+          aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --value "${newVersion}" --type String --overwrite
           
           echo "new version is: ${newVersion}"
           echo "version=${newVersion}" >> $GITHUB_OUTPUT

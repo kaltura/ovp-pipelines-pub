@@ -60,7 +60,7 @@ jobs:
           newVersion="""
           if [[ ${STAGE} == "canary" ]]; then
             echo "canary"
-            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --query 'Parameters[].Value' --output text)
+            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --query 'Parameters[].Value' --output text)
             if [[ ${oldVersion} == "NULL" ]]; then
               oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
               newVersion="${oldVersion}.001"
@@ -79,8 +79,8 @@ jobs:
               aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
             fi
           fi
-          echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME} = ${newVersion}"
-          aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --value "${newVersion}" --type String --overwrite
+          echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE} = ${newVersion}"
+          aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --value "${newVersion}" --type String --overwrite
           
           echo "new version is: ${newVersion}"
           echo "version=${newVersion}" >> $GITHUB_OUTPUT

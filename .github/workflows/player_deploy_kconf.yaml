@@ -83,7 +83,7 @@ jobs:
               aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
             fi
           fi
-          
+          echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE} = ${newVersion}"
           aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --value "${newVersion}" --type String --overwrite
           
           echo "new version is: ${newVersion}"

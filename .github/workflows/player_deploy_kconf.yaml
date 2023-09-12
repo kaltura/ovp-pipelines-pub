@@ -37,7 +37,7 @@ jobs:
       SCHEMA_TYPE: ${{ inputs.schema-type }}
       ENV_TYPE: ${{ inputs.env }}
       STAGE: ${{ inputs.stage }}
-      UICONF_NEW_VERSION: ${{ inputs.uiconf-new-version }}
+      PRODUCT_VERSION: ${{ inputs.uiconf-new-version }}
     outputs:
       params: ${{ steps.get-params.outputs.params }}
       product-version: ${{ steps.get-product-version.outputs.version }}
@@ -58,30 +58,25 @@ jobs:
 
           PRODUCT_NAME="${ENV_TYPE}-${STAGE}""
           newVersion="""
-          if [[ ${UICONF_NEW_VERSION} != "" ]]; then
-            newVersion=${UICONF_NEW_VERSION}
-            exit 0
-          else
-            if [[ ${STAGE} == "canary" ]]; then
-              echo "canary"
-              oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --query 'Parameters[].Value' --output text)
-              if [[ ${oldVersion} == "NULL" ]]; then
-                oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
-                newVersion="${oldVersion}.001"
-              else
-                newVersion=$(increment_version "${oldVersion}")
-              fi
-            else
+          if [[ ${STAGE} == "canary" ]]; then
+            echo "canary"
+            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --query 'Parameters[].Value' --output text)
+            if [[ ${oldVersion} == "NULL" ]]; then
               oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
-              if [[ -z ${PRODUCT_VERSION} ]] ; then
-                newVersion=$(increment_version "${oldVersion}")
-              else
-                newVersion=${PRODUCT_VERSION}
-              fi
-              if [[ ${STAGE} == "latest" ]]; then
-                echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary = NULL"
-                aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
-              fi
+              newVersion="${oldVersion}.001"
+            else
+              newVersion=$(increment_version "${oldVersion}")
+            fi
+          else
+            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
+            if [[ -z ${PRODUCT_VERSION} ]] ; then
+              newVersion=$(increment_version "${oldVersion}")
+            else
+              newVersion=${PRODUCT_VERSION}
+            fi
+            if [[ ${STAGE} == "latest" ]]; then
+              echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary = NULL"
+              aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
             fi
           fi
           echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME} = ${newVersion}"

@@ -62,10 +62,10 @@ jobs:
             exit 0
           fi
           
-          if [[ ${STAGE} = "canary" ]]; then
+          if [[ ${STAGE} == "canary" ]]; then
             echo "canary"
             oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --query 'Parameters[].Value' --output text)
-            if [[ ${oldVersion} = "NULL" ]]; then
+            if [[ ${oldVersion} == "NULL" ]]; then
               oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
               newVersion="${oldVersion}.001"
             else
@@ -79,7 +79,7 @@ jobs:
               newVersion=${PRODUCT_VERSION}
             fi
           
-            if [[ ${STAGE} = "latest" ]]; then
+            if [[ ${STAGE} == "latest" ]]; then
               echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary = NULL"
               aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
             fi

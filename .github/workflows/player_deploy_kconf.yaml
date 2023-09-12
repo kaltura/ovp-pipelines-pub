@@ -90,7 +90,7 @@ jobs:
           PARAMS=$(echo "${PARAMS}" | jq -c 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
           echo "params=${PARAMS}" >> $GITHUB_OUTPUT
   enumerate-environments:
-    name: Deploy KConf
+    name: Enumerate Environments
     runs-on: ubuntu-latest
     needs: [retrieve-parameters]
     env:
@@ -128,7 +128,7 @@ jobs:
               ENVIRONMENT=$(get_environments "${ENV}")
               ENV_NAME=$(echo "${ENVIRONMENT}" | cut -d':' -f1)
               VALUES_NAME=$(echo "${ENVIRONMENT}" | cut -d':' -f2 | sed 's/ *$//')
-              JSON_STRING=$(jq -n --arg env "${ENV_NAME}" --arg values "${VALUES_NAME}" '{$env:$values}')
+              JSON_STRING=$(jq -n --arg env "${ENV_NAME}" --arg values "${VALUES_NAME}" '{($env):$values}')
               JSON_ENVIRONMENTS=$(jq -n --argjson json "${JSON_ENVIRONMENTS}" --argjson json2 "${JSON_STRING}" '$json + $json2')
             done
           fi

@@ -186,6 +186,10 @@ jobs:
       - name: Commit and Push
         id: commit-and-push
         run: |
+          if [[ -z $(git status -s) ]]; then
+            echo "No changes to commit"
+            exit 0
+          fi
           git config --global user.email "github-ci@kaltura.com"
           git config --global user.name "github-ci"
           git commit -am ":rocket: CI: Deploy ${SCHEMA_TYPE}-${STAGE} on ${ENV_TYPE}"

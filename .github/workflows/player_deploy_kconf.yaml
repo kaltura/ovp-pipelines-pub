@@ -89,20 +89,13 @@ jobs:
           PARAMS=$(aws ssm get-parameters-by-path --path "${SCHEMA_PARAM_BASE_NAME}/${SCHEMA_TYPE}/${ENV_TYPE}-${STAGE}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
           PARAMS=$(echo "${PARAMS}" | jq -c 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
           echo "params=${PARAMS}" >> $GITHUB_OUTPUT
-  deploy-kconf:
+  enumerate-environments:
     name: Deploy KConf
     runs-on: ubuntu-latest
     needs: [retrieve-parameters]
     env:
-      PRODUCT_VERSION_PARAM_BASE_NAME: /player/versions/uiconf
-      SCHEMA_PARAM_BASE_NAME: /player/schema
-      PRODUCT_VERSION_YAML_BASE_NAME: .global.application.embedPlayKit.productVersions
-      PLAYKIT_VERSION_SCHEMA_BASE_NAME: .global.application.embedPlayKit.versions
-      SCHEMA_TYPE: ${{ inputs.schema-type }}
-      ENV_TYPE: ${{ inputs.env }}
-      STAGE: ${{ inputs.stage }}
-      PRODUCT_VERSION: ${{ needs.retrieve-parameters.outputs.product-version }}
-      PARAMS: ${{ needs.retrieve-parameters.outputs.params }}
+      ENV_TYPE: ${{ github.event.inputs.env }}
+      STAGE: ${{ github.event.inputs.stage }}
     outputs:
       envs: ${{ steps.enumerate-environments.outputs.envs }}
     steps:
@@ -114,43 +107,65 @@ jobs:
       - name: Enumerate Environments
         id: enumerate-environments
         run: |
-          ENVIRONMENTS=""
+          ENVIRONMENTS=()
 
-          if [[ ${ENV_TYPE} == "prod" && ${STAGE} == "canary" ]]; then
-            echo "skipping prod env: ${ENV_TYPE} for canary stage"
-            exit 0
-          elif ! [[ ${ENV_TYPE} == @(dev|qa|prod) ]]; then
-            echo "Invalid environment type"
-            exit 1
-          elif ! [[ ${STAGE} == @(canary|beta|latest) ]]; then
-            echo "Invalid stage type"
-            exit 1
-          fi
-          
-          if [[ ${ENV_TYPE} == "prod" ]]; then
-              ENVIRONMENTS="deployment/values.yaml"
-          elif [[ ${ENV_TYPE} == "qa" ]]; then
-              ENV_DELIMITER=$(echo "${ENV_TYPE}" | cut -c1)
-              ENVIRONMENTS=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/[a-zA-z]+${ENV_DELIMITER}.\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
-          elif [[ ${ENV_TYPE} == "dev" ]]; then
-              ENVIRONMENTS=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/[a-zA-z]+d${ENV_DELIMITER}.\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
+          function get_environments() {
+            ENV_DELIMITER=$(echo "${1}" | cut -c1)
+            VALUES_FILES=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/[a-zA-z]+${ENV_DELIMITER}.\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
+            ENVIRONMENT=$(echo "${VALUES_FILES}" | cut -d'/' -f4)
+            echo "${ENVIRONMENT}"
+          }
+
+          function add_environment() {
+            ENVIRONMENT="${1}"
+            for ENV in ${ENVIRONMENT}; do
+              ENVIRONMENTS+=("${ENV}")
+            done
+          }
+
+          if [[ ${ENV_TYPE} != "" ]]; then
+            echo "build for env ${ENV_TYPE}"
+            add_environment "$(get_environments "${ENV_TYPE}")"
           else
-              echo "Invalid environment type"
-              exit 1
+            for ENV in {dev,qa,prod}; do
+              if [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
+                echo "skipping prod env: ${iENV} for canary stage"
+                continue
+              fi
+              add_environment "$(get_environments "${ENV}")"
+            done
           fi
-          
-          if [[ -z ${ENVIRONMENTS} ]]; then
-            echo "No environments found"
-            exit 1
-          fi
-          ENVIRONMENTS=$(echo "${ENVIRONMENTS}" | tr '\n' ' ' )
+
+          JSON_ENVIRONMENTS=$(jq -c -n '$ARGS.positional' --args "${ENVIRONMENTS[@]}")
           echo "envs=${ENVIRONMENTS}" >> $GITHUB_OUTPUT
+  deploy-kconf:
+    name: Deploy KConf
+    runs-on: ubuntu-latest
+    needs: [retrieve-parameters, enumerate-environments]
+    strategy:
+      matrix:
+        env: ${{ needs.enumerate-environments.outputs.envs }}
+    env:
+      PRODUCT_VERSION_PARAM_BASE_NAME: /player/versions/uiconf
+      SCHEMA_PARAM_BASE_NAME: /player/schema
+      PRODUCT_VERSION_YAML_BASE_NAME: .global.application.embedPlayKit.productVersions
+      PLAYKIT_VERSION_SCHEMA_BASE_NAME: .global.application.embedPlayKit.versions
+      SCHEMA_TYPE: ${{ github.event.inputs.schema-type }}
+      STAGE: ${{ github.event.inputs.stage }}
+      PRODUCT_VERSION: ${{ needs.retrieve-parameters.outputs.product-version }}
+      PARAMS: ${{ needs.retrieve-parameters.outputs.params }}
+      ENVIRONMENT: ${{ matrix.env }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: kaltura/embed-playkit-saas-config-generic
+          ref: main
       - name: Update Helm Values
         id: update_schema
-        env:
-          ENVIRONMENTS: ${{ steps.enumerate-environments.outputs.envs }}
         run: |
-          for ENV in ${ENVIRONMENTS}; do
+          VALUES_FILES=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/${ENVIRONMENT}\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
+          for ENV in ${VALUES_FILES}; do
             echo "Running on ${ENV}"
             for PLAYKIT in $(echo "${PARAMS}" | jq -r 'keys[]'); do
               NAME=$(basename "${PLAYKIT}")
@@ -183,14 +198,3 @@ jobs:
             NEW_PRODUCT_VERSION=$(yq "${PRODUCT_VERSION_PATH}" "${ENV}" -r)
             echo "Successfully deployed new product version: ${NEW_PRODUCT_VERSION}"
           done
-      - name: Commit and Push
-        id: commit-and-push
-        run: |
-          if [[ -z $(git status -s) ]]; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git config --global user.email "github-ci@kaltura.com"
-          git config --global user.name "github-ci"
-          git commit -am ":rocket: CI: Deploy ${SCHEMA_TYPE}-${STAGE} on ${ENV_TYPE}"
-          git push

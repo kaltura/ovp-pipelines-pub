@@ -168,14 +168,10 @@ jobs:
           VALUES_FILES=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/${ENVIRONMENT}\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
           echo "VALUES_FILES=${VALUES_FILES}"
           for ENV in ${VALUES_FILES}; do
-            echo "Running on ${ENV}"
             for PLAYKIT in $(echo "${PARAMS}" | jq -r 'keys[]'); do
               NAME=$(basename "${PLAYKIT}")
               VERSION=$(echo "${PARAMS}" | jq -r ".\"${PLAYKIT}\"")
               PLAYKIT_VERSION_PATH="${PLAYKIT_VERSION_SCHEMA_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}.${NAME}"
-              echo "PLAYKIT_VERSION_PATH=${PLAYKIT_VERSION_PATH}"
-              echo "VERSION=${VERSION}"
-              echo "NAME=${NAME}"
               CURRENT_VERSION=$(yq "${PLAYKIT_VERSION_PATH}" "${ENV}" -r)
           
               if [[ ${VERSION} == "${CURRENT_VERSION}" ]]; then
@@ -203,3 +199,14 @@ jobs:
             NEW_PRODUCT_VERSION=$(yq "${PRODUCT_VERSION_PATH}" "${ENV}" -r)
             echo "Successfully deployed new product version: ${NEW_PRODUCT_VERSION}"
           done
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -z $(git status -s) ]]; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git add .
+          git commit -am ":rocket: CI: Deploy ${SCHEMA_TYPE}-${STAGE} on ${ENV}"
+          git push

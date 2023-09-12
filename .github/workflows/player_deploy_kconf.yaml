@@ -145,7 +145,7 @@ jobs:
               add_environment "$(get_environments "${ENV}")"
             done
           fi
-
+          OUTPUT=$(echo "${ENVIRONMENTS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
           echo "envs=${ENVIRONMENTS[@]}" >> $GITHUB_OUTPUT
       - name: Update Helm Values
         id: update_schema
@@ -165,7 +165,7 @@ jobs:
             else
               ENV_NAME=$(echo "${ENV}" | cut -d'/' -f5 | sort -u)
             fi
-            echo "Running on ${ENV_NAME}"
+            echo "Running on ${ENV_NAME} ${ENV}"
             for PLAYKIT in $(echo "${PARAMS}" | jq -r 'keys[]'); do
               NAME=$(basename "${PLAYKIT}")
               VERSION=$(echo "${PARAMS}" | jq -r ".\"${PLAYKIT}\"")

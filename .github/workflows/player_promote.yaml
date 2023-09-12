@@ -63,6 +63,23 @@ jobs:
       version: ${{ needs.build-uiconf.outputs.version }}
       schema-type: ${{ inputs.schema-type }}
       file-name: ${{ needs.build-uiconf.outputs.file-name }}
+  promote-schema-parameter:
+    uses: ./.github/workflows/player_promote_schema_parameter.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+    with:
+      promotion-type: ${{ inputs.promotion-type }}
+      schema-type: ${{ inputs.schema-type }}
+  deploy-kconf:
+    needs: promote-schema-parameter
+    uses: ./.github/workflows/player_deploy_kconf.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+    with:
+      stage: ${{ needs.promote-schema-parameter.outputs.stage }}
+      env: ${{ needs.promote-schema-parameter.outputs.env }}
+      schema-type: ${{ inputs.schema-type }}
+      uiconf-new-version: ${{ inputs.uiconf-new-version }}
   notification:
     if: always()
     uses: ./.github/workflows/notification.yaml

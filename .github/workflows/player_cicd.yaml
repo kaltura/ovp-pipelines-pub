@@ -162,6 +162,14 @@ jobs:
       version: ${{ needs.build-uiconf.outputs.version }}
       schema-type: ${{ inputs.schema-type }}
       file-name: ${{ needs.build-uiconf.outputs.file-name }}
+  deploy-kconf:
+    uses: ./.github/workflows/player_deploy_kconf.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+    with:
+      stage: ${{ inputs.stage }}
+      env: ${{ inputs.env }}
+      schema-type: ${{ inputs.schema-type }}
   notification:
     if: always()
     uses: ./.github/workflows/notification.yaml

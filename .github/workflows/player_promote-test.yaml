@@ -22,7 +22,7 @@ on:
         description: "not required - if no value is given it will increment the minor version - example 'from 1.00 to 1.01'"
 
 jobs:
-  promote-schema:
+  promote-schema-parameter:
     uses: ./.github/workflows/player_promote_schema_parameter.yaml
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
@@ -30,12 +30,12 @@ jobs:
       promotion-type: ${{ inputs.promotion-type }}
       schema-type: ${{ inputs.schema-type }}
   deploy-kconf:
-    needs: promote-schema
+    needs: promote-schema-parameter
     uses: ./.github/workflows/player_deploy_kconf.yaml
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
     with:
-      stage: ${{ needs.promote-schema.outputs.stage }}
-      env: ${{ needs.promote-schema.outputs.env }}
+      stage: ${{ needs.promote-schema-parameter.outputs.stage }}
+      env: ${{ needs.promote-schema-parameter.outputs.env }}
       schema-type: ${{ inputs.schema-type }}
       uiconf-new-version: ${{ inputs.uiconf-new-version }}

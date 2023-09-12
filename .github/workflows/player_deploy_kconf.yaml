@@ -107,32 +107,35 @@ jobs:
       - name: Enumerate Environments
         id: enumerate-environments
         run: |
-          JSON_ENVIRONMENTS="{}"
+          ENVIRONMENTS=()
+          JSON_ENVIRONMENTS=""
 
           function get_environments() {
             ENV_DELIMITER=$(echo "${1}" | cut -c1)
             VALUES_FILES=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/[a-zA-z]+${ENV_DELIMITER}.\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
-            VALUES_FILES=$(echo "${VALUES_FILES}" | tr '\n' ' ')
             ENVIRONMENT=$(echo "${VALUES_FILES}" | cut -d'/' -f4 | sort -u)
-            echo "${ENVIRONMENT}:${VALUES_FILES}"
+            echo "${ENVIRONMENT}"
+          }
+
+          function add_environment() {
+            ENVIRONMENT="${1}"
+            for ENV in ${ENVIRONMENT}; do
+              ENVIRONMENTS+=("${ENV}")
+            done
           }
 
           if [[ ${ENV_TYPE} != "" ]]; then
             echo "build for env ${ENV_TYPE}"
+            add_environment "$(get_environments "${ENV}")"
           else
             for ENV in {dev,qa,prod}; do
               if [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
                 echo "skipping prod env: ${iENV} for canary stage"
                 continue
               fi
-              ENVIRONMENT=$(get_environments "${ENV}")
-              ENV_NAME=$(echo "${ENVIRONMENT}" | cut -d':' -f1)
-              VALUES_NAME=$(echo "${ENVIRONMENT}" | cut -d':' -f2 | sed 's/ *$//')
-              JSON_STRING=$(jq -n --arg env "${ENV_NAME}" --arg values "${VALUES_NAME}" '{($env):$values}')
-              JSON_ENVIRONMENTS=$(jq -n --argjson json "${JSON_ENVIRONMENTS}" --argjson json2 "${JSON_STRING}" '$json + $json2')
+              add_environment "$(get_environments "${ENV}")"
             done
           fi
-
           JSON_ENVIRONMENTS=$(jq -c -n '$ARGS.positional' --args "${ENVIRONMENTS[@]}")
           echo "envs=${ENVIRONMENTS}" >> $GITHUB_OUTPUT
   deploy-kconf:

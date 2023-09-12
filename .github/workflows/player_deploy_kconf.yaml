@@ -137,7 +137,7 @@ jobs:
             done
           fi
           JSON_ENVIRONMENTS=$(jq -c -n '$ARGS.positional' --args "${ENVIRONMENTS[@]}")
-          echo "envs=${ENVIRONMENTS}" >> $GITHUB_OUTPUT
+          echo "envs=${JSON_ENVIRONMENTS}" >> $GITHUB_OUTPUT
   deploy-kconf:
     name: Deploy KConf
     runs-on: ubuntu-latest

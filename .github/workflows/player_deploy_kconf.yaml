@@ -80,7 +80,7 @@ jobs:
             fi
           fi
           echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME} = ${newVersion}"
-          aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --value "${newVersion}" --type String --overwrite
+          #aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${PRODUCT_NAME}" --value "${newVersion}" --type String --overwrite
           
           echo "new version is: ${newVersion}"
           echo "version=${newVersion}" >> $GITHUB_OUTPUT

@@ -106,9 +106,9 @@ jobs:
       SCHEMA_PARAM_BASE_NAME: /player/schema
       PRODUCT_VERSION_YAML_BASE_NAME: .global.application.embedPlayKit.productVersions
       PLAYKIT_VERSION_SCHEMA_BASE_NAME: .global.application.embedPlayKit.versions
-      SCHEMA_TYPE: ${{ github.event.inputs.schema-type }}
-      ENV_TYPE: ${{ github.event.inputs.env }}
-      STAGE: ${{ github.event.inputs.stage }}
+      SCHEMA_TYPE: ${{ inputs.schema-type }}
+      ENV_TYPE: ${{ inputs.env }}
+      STAGE: ${{ inputs.stage }}
       PRODUCT_VERSION: ${{ needs.retrieve-parameters.outputs.product-version }}
       PARAMS: ${{ needs.retrieve-parameters.outputs.params }}
     outputs:

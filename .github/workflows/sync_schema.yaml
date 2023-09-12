@@ -3,6 +3,13 @@ run-name: Sync Schema
 
 on:
   workflow_call:
+    secrets:
+        PLAYER_CENTRAL_ACCOUNT_ID:
+          required: true
+        PLAYER_SERVICES_ACCOUNT_ID:
+          required: true
+        PLAYER_S3_BUCKET_DEPLOYMENT:
+          required: true
     inputs:
       schema-type:
         description: Schema Type

@@ -188,7 +188,7 @@ jobs:
   notification:
     if: always()
     uses: ./.github/workflows/notification.yaml
-    needs: [ deploy-uiconf, build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm, running-tests ]
+    needs: [ deploy-kconf, update-schema-parameter, deploy-uiconf, build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm, running-tests ]
     secrets:
       PLAYER_MSTEAMS_WEBHOOK: ${{ secrets.PLAYER_MSTEAMS_WEBHOOK }}
     with:

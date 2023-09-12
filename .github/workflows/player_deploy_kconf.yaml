@@ -166,6 +166,7 @@ jobs:
         run: |
           echo "${ENVIRONMENT}"
           VALUES_FILES=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/${ENVIRONMENT}\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
+          echo "VALUES_FILES=${VALUES_FILES}"
           for ENV in ${VALUES_FILES}; do
             echo "Running on ${ENV}"
             for PLAYKIT in $(echo "${PARAMS}" | jq -r 'keys[]'); do

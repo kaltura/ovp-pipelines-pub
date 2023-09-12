@@ -139,7 +139,7 @@ jobs:
           else
             for ENV in {dev,qa,prod}; do
               if [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
-                echo "skipping prod env: ${iENV} for canary stage"
+                echo "skipping prod env: ${ENV} for canary stage"
                 continue
               fi
               add_environment "$(get_environments "${ENV}")"

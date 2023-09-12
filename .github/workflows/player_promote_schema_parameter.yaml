@@ -30,8 +30,8 @@ jobs:
       id-token: write
       contents: read
     outputs:
-      stage: ${{ steps.promote-schema-parameters.outputs.stage }}
-      env: ${{ steps.promote-schema-parameters.outputs.env }}
+      stage: ${{ steps.check-stage.outputs.stage }}
+      env: ${{ steps.check-environment.outputs.env }}
     env:
       PROMOTION_TYPE: ${{ inputs.promotion-type }}
       SCHEMA_TYPE: ${{ inputs.schema-type }}

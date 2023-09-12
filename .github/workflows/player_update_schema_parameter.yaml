@@ -38,6 +38,7 @@ env:
 
 jobs:
   update-schema:
+    name: update-schema-paramater-store
     runs-on: [ ubuntu-latest ]
     permissions:
       id-token: write

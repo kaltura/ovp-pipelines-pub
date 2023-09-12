@@ -94,8 +94,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [retrieve-parameters]
     env:
-      ENV_TYPE: ${{ github.event.inputs.env }}
-      STAGE: ${{ github.event.inputs.stage }}
+      ENV_TYPE: ${{ inputs.env }}
+      STAGE: ${{ inputs.stage }}
     outputs:
       envs: ${{ steps.enumerate-environments.outputs.envs }}
     steps:
@@ -150,8 +150,8 @@ jobs:
       SCHEMA_PARAM_BASE_NAME: /player/schema
       PRODUCT_VERSION_YAML_BASE_NAME: .global.application.embedPlayKit.productVersions
       PLAYKIT_VERSION_SCHEMA_BASE_NAME: .global.application.embedPlayKit.versions
-      SCHEMA_TYPE: ${{ github.event.inputs.schema-type }}
-      STAGE: ${{ github.event.inputs.stage }}
+      SCHEMA_TYPE: ${{ inputs.schema-type }}
+      STAGE: ${{ inputs.stage }}
       PRODUCT_VERSION: ${{ needs.retrieve-parameters.outputs.product-version }}
       PARAMS: ${{ needs.retrieve-parameters.outputs.params }}
       ENVIRONMENT: ${{ matrix.env }}

@@ -160,7 +160,7 @@ jobs:
             echo "invalid stage: ${STAGE}"
             exit 1
           fi
-          for ENV in ${ENVIRONMENTS}; do
+          for ENV in "${ENVIRONMENTS[@]}"; do
             if [[ ${ENV} == "deployment/values.yaml" ]]; then
               ENV_NAME="prod"
             else
@@ -174,7 +174,6 @@ jobs:
               CURRENT_VERSION=$(yq "${PLAYKIT_VERSION_PATH}" "${ENV}" -r)
           
               if [[ ${VERSION} == "${CURRENT_VERSION}" ]]; then
-                echo "No updates for: ${NAME}"
                 continue
               fi
           
@@ -184,7 +183,7 @@ jobs:
                 exit 1
               fi
             done
-            echo "${PLAYKIT_VERSION_PATH} = \"${VERSION}\""
+            echo "Updated: ${NAME} = \"${VERSION}\""
 
             PRODUCT_VERSION_PATH="${PRODUCT_VERSION_YAML_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}"
           
@@ -200,11 +199,12 @@ jobs:
       - name: Commit and Push
         id: commit-and-push
         run: |
+          git config --global user.email "github-ci@kaltura.com"
+          git config --global user.name "github-ci"
+          git add .
           if [[ -z $(git status -s) ]]; then
             echo "No changes to commit"
             exit 0
           fi
-          git config --global user.email "github-ci@kaltura.com"
-          git config --global user.name "github-ci"
           git commit -am ":rocket: CI: Deploy ${SCHEMA_TYPE}-${STAGE} on ${ENV_TYPE}"
           git push

@@ -181,8 +181,8 @@ jobs:
                 echo "Failed to update ${ENV} with ${PLAYKIT_VERSION_PATH} = ${VERSION}"
                 exit 1
               fi
+              echo "Updated: ${NAME} = \"${VERSION}\""
             done
-            echo "Updated: ${NAME} = \"${VERSION}\""
 
             PRODUCT_VERSION_PATH="${PRODUCT_VERSION_YAML_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}"
           

@@ -198,8 +198,8 @@ jobs:
       - name: Commit and Push
         id: commit-and-push
         run: |
-          git config --global user.email "github-ci@kaltura.com"
-          git config --global user.name "github-ci"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git add .
           if [[ -z $(git status -s) ]]; then
             echo "No changes to commit"

@@ -138,6 +138,19 @@ jobs:
       schema-type: ${{ inputs.schema-type }}
       name: ${{ needs.upload-packages-to-npm.outputs.name }}
       version: ${{ needs.upload-packages-to-npm.outputs.version }}
+  update-schema-parameter:
+    if: (always() && needs.upload-to-s3.result == 'success' && inputs.type != 'dependency')
+    needs: [upload-to-s3, upload-packages-to-npm]
+    uses: ./.github/workflows/player_update_schema_parameter.yaml
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+    with:
+      env: ${{ inputs.env }}
+      type: ${{ inputs.type }}
+      player-type: ${{ inputs.player-type }}
+      schema-type: ${{ inputs.schema-type }}
+      name: ${{ needs.upload-packages-to-npm.outputs.name }}
+      version: ${{ needs.upload-packages-to-npm.outputs.version }}
   build-uiconf:
     if: (always() && needs.update-schema.result == 'success' && inputs.stage == 'canary' && inputs.type != 'dependency')
     needs: [update-schema, upload-to-s3, upload-packages-to-npm]
@@ -164,6 +177,8 @@ jobs:
       file-name: ${{ needs.build-uiconf.outputs.file-name }}
   deploy-kconf:
     uses: ./.github/workflows/player_deploy_kconf.yaml
+    if: (always() && needs.update-schema-parameter.result == 'success' && inputs.stage == 'canary' && inputs.type != 'dependency')
+    needs: [ build-uiconf, update-schema-parameter, upload-to-s3, upload-packages-to-npm ]
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
     with:

@@ -6,12 +6,6 @@ on:
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID:
         required: true
-      PLAYER_SERVICES_ACCOUNT_ID:
-        required: true
-      PLAYER_S3_BUCKET_DEPLOYMENT:
-        required: true
-      PLAYKIT_SECRET_IDS:
-        required: true
     inputs:
       env:
         description: "env - example: 'qa/prod'"

@@ -159,7 +159,7 @@ jobs:
             echo "invalid stage: ${STAGE}"
             exit 1
           fi
-          for ENV in "${ENVIRONMENTS[@]}"; do
+          for ENV in "${ENVIRONMENTS}"; do
             if [[ ${ENV} == "deployment/values.yaml" ]]; then
               ENV_NAME="prod"
             else

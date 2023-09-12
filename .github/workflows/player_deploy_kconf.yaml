@@ -56,8 +56,6 @@ jobs:
             echo "$1" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}'
           }
 
-          PRODUCT_NAME="${ENV_TYPE}-${STAGE}"
-          newVersion="""
           if [[ ${STAGE} == "canary" ]]; then
             echo "canary"
             oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --query 'Parameters[].Value' --output text)
@@ -74,6 +72,7 @@ jobs:
             else
               newVersion=${PRODUCT_VERSION}
             fi
+
             if [[ ${STAGE} == "latest" ]]; then
               echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary = NULL"
               aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite

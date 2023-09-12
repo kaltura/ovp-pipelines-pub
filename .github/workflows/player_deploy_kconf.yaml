@@ -26,7 +26,7 @@ on:
 
 jobs:
   retrieve-parameters:
-    name: gather-kconf-build-details
+    name: build-kconf
     runs-on: ubuntu-latest
     permissions:
       id-token: write

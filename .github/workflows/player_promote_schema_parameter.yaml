@@ -49,7 +49,7 @@ jobs:
         run: |
           PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
           PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
-          ENVIRONMENT=$(echo "${PROMOTION_TO}" | cut -d' ' -f3)
+          ENVIRONMENT=$(echo "${PROMOTION_TO}" | cut -d'-' -f1)
           echo "Environment: ${ENVIRONMENT}"
           if [[ ${ENVIRONMENT} != @(prod|qa) ]]; then
               echo "Invalid environment type"
@@ -63,8 +63,8 @@ jobs:
         run: |
           PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
           PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
-          ENVIRONMENT=$(echo "${PROMOTION_TO}" | cut -d' ' -f3)
-          STAGE=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f2)
+          STAGE=$(echo "${PROMOTION_TO}" | cut -d'-' -f2)
+          echo "Stage: ${STAGE}"
           if [[ ${STAGE} != @(beta|latest) ]]; then
               echo "Invalid stage type"
               exit 1

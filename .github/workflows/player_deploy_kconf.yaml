@@ -173,6 +173,9 @@ jobs:
               NAME=$(basename "${PLAYKIT}")
               VERSION=$(echo "${PARAMS}" | jq -r ".\"${PLAYKIT}\"")
               PLAYKIT_VERSION_PATH="${PLAYKIT_VERSION_SCHEMA_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}.${NAME}"
+              echo "PLAYKIT_VERSION_PATH=${PLAYKIT_VERSION_PATH}"
+              echo "VERSION=${VERSION}"
+              echo "NAME=${NAME}"
               CURRENT_VERSION=$(yq "${PLAYKIT_VERSION_PATH}" "${ENV}" -r)
           
               if [[ ${VERSION} == "${CURRENT_VERSION}" ]]; then

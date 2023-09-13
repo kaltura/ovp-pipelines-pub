@@ -108,14 +108,16 @@ jobs:
     outputs:
       envs: ${{ steps.enumerate-environments.outputs.envs }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: kaltura/embed-playkit-saas-config-generic
+          ref: main
+          ssh-key: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
       - name: Configure GitHub Credentials
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
-      - name: Checkout
-        run:
-          git clone --branch main git@github.com:kaltura/embed-playkit-saas-config-generic.git .
-          ls
       - name: Enumerate Environments
         id: enumerate-environments
         run: |

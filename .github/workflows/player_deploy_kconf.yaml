@@ -108,15 +108,17 @@ jobs:
     outputs:
       envs: ${{ steps.enumerate-environments.outputs.envs }}
     steps:
-      - name: Configure GitHub Credentials
+      - name: adjust key
         env:
           PLAYER_GITHUB_KCONF_TOKEN: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
+        run: |
+          echo "${PLAYER_GITHUB_KCONF_TOKEN}"
+      - name: Configure GitHub Credentials
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
       - name: Checkout
         run:
-          echo "${PLAYER_GITHUB_KCONF_TOKEN}""
           git clone --branch main git@github.com:kaltura/embed-playkit-saas-config-generic.git .
           ls
       - name: Enumerate Environments

@@ -108,11 +108,6 @@ jobs:
     outputs:
       envs: ${{ steps.enumerate-environments.outputs.envs }}
     steps:
-      - name: adjust key
-        env:
-          PLAYER_GITHUB_KCONF_TOKEN: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
-        run: |
-          echo "${PLAYER_GITHUB_KCONF_TOKEN}"
       - name: Configure GitHub Credentials
         uses: webfactory/ssh-agent@v0.8.0
         with:

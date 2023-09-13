@@ -63,6 +63,7 @@ jobs:
 
       - name: Trigger uiconf deployment
         run: |
+          INPUT_ENV_TYPE="${{ inputs.env }}"
           echo '${{ steps.accounts.outputs.accounts }}' | jq -c '.[]' | while read i; do
             env_name="$(jq -r '.env' <<< "$i")"
             env_type="$(jq -r '.env_type' <<< "$i")"
@@ -72,6 +73,8 @@ jobs:
               continue
             elif [[ "$env_type" == "prod" && "${{ inputs.stage }}" == "canary" ]]; then
               echo "skipping prod env: ${env_name} for canary stage"
+              continue
+            elif [[ ${INPUT_ENV_TYPE} =~ ^(dev|qa)$ && "$env_type" == "prod" ]]; then
               continue
             elif ! [[ "$env_type" =~ ^(dev|qa|prod)$ ]]; then
               echo "invalid env_type: ${env_type} for env: ${env_name}"

@@ -146,15 +146,15 @@ jobs:
           elif ! [[ ${STAGE} =~ ^(canary|beta|latest)$ ]]; then
             echo "invalid stage: ${STAGE}"
             exit 1
-          else
-            for ENV in {dev,qa,prod}; do
-              if [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
-                echo "skipping prod env: ${ENV} for canary stage"
-                continue
-              fi
-              add_environment "$(get_environments "${ENV}")"
-            done
           fi
+          for ENV in {dev,qa,prod}; do
+            if [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
+              continue
+            elif [[ ${ENV_TYPE} =~ ^(dev|qa)$ && ${ENV} == "prod" ]]; then
+              continue
+            fi
+            add_environment "$(get_environments "${ENV}")"
+          done
 
           echo "envs=${ENVIRONMENTS[@]}" >> $GITHUB_OUTPUT
       - name: Update Helm Values

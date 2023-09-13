@@ -7,6 +7,8 @@ on:
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID:
         required: true
+      PLAYER_GITHUB_KCONF_TOKEN:
+        required: false
     inputs:
       promotion-type:
         type: string
@@ -29,11 +31,25 @@ jobs:
     with:
       promotion-type: ${{ inputs.promotion-type }}
       schema-type: ${{ inputs.schema-type }}
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.check-secret.outputs.exists }}
+    steps:
+      - name: Check secret
+        id: check-secret
+        env:
+          PLAYER_GITHUB_KCONF_TOKEN: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
+        if: ${{ env.PLAYER_GITHUB_KCONF_TOKEN != '' }}
+        run: |
+          echo "exists=true" >> $GITHUB_OUTPUT
   deploy-kconf:
-    needs: promote-schema-parameter
+    needs: [ check-secret, promote-schema-parameter ]
+    if: ${{ needs.check-secret.outputs.exists == 'true' }}
     uses: ./.github/workflows/player_deploy_kconf.yaml
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_GITHUB_KCONF_TOKEN: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
     with:
       stage: ${{ needs.promote-schema-parameter.outputs.stage }}
       env: ${{ needs.promote-schema-parameter.outputs.env }}

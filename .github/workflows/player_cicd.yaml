@@ -71,12 +71,12 @@ on:
         description: "which node version to use - example: '17.x/18.x'"
         required: false
         type: string
-        default: '17.x'        
+        default: '17.x'
       os:
         description: "which ubuntu version to use - example: 'ubuntu-latest'"
         required: false
         type: string
-        default: 'ubuntu-latest'       
+        default: 'ubuntu-latest'
 
 jobs:
   accept-prod:
@@ -192,7 +192,7 @@ jobs:
   deploy-kconf:
     uses: ./.github/workflows/player_deploy_kconf.yaml
     if: (always() && needs.update-schema-parameter.result == 'success' && inputs.stage == 'canary' && inputs.type != 'dependency' && needs.check-secret.outputs.exists == 'true')
-    needs: [ check-secret, build-uiconf, update-schema-parameter, upload-to-s3, upload-packages-to-npm ]
+    needs: [ upload-to-s3, upload-packages-to-npm, check-secret, update-schema-parameter ]
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
       PLAYER_GITHUB_KCONF_TOKEN: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}

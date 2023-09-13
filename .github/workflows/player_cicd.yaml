@@ -21,6 +21,8 @@ on:
         required: true
       PLAYER_GITHUB_BOT_TOKEN:
         required: true
+      PLAYER_GITHUB_KCONF_TOKEN:
+        required: false
     inputs:
       env:
         description: "env - example: 'qa/prod'"
@@ -175,12 +177,25 @@ jobs:
       version: ${{ needs.build-uiconf.outputs.version }}
       schema-type: ${{ inputs.schema-type }}
       file-name: ${{ needs.build-uiconf.outputs.file-name }}
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.check-secret.outputs.exists }}
+    steps:
+      - name: Check secret
+        id: check-secret
+        env:
+          PLAYER_GITHUB_KCONF_TOKEN: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
+        if: ${{ env.PLAYER_GITHUB_KCONF_TOKEN != '' }}
+        run: |
+          echo "exists=true" >> $GITHUB_OUTPUT
   deploy-kconf:
     uses: ./.github/workflows/player_deploy_kconf.yaml
-    if: (always() && needs.update-schema-parameter.result == 'success' && inputs.stage == 'canary' && inputs.type != 'dependency')
-    needs: [ build-uiconf, update-schema-parameter, upload-to-s3, upload-packages-to-npm ]
+    if: (always() && needs.update-schema-parameter.result == 'success' && inputs.stage == 'canary' && inputs.type != 'dependency' && needs.check-secret.outputs.exists == 'true')
+    needs: [ check-secret, build-uiconf, update-schema-parameter, upload-to-s3, upload-packages-to-npm ]
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+      PLAYER_GITHUB_KCONF_TOKEN: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
     with:
       stage: ${{ inputs.stage }}
       env: ${{ inputs.env }}

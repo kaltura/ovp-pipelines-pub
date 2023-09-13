@@ -6,6 +6,8 @@ on:
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID:
         required: true
+      PLAYER_GITHUB_KCONF_TOKEN:
+        required: true
     inputs:
       stage:
         description: "build for specific type - example: 'canary/beta/latest'"
@@ -111,6 +113,7 @@ jobs:
         with:
           repository: kaltura/embed-playkit-saas-config-generic
           ref: main
+          ssh-key: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
       - name: Enumerate Environments
         id: enumerate-environments
         run: |

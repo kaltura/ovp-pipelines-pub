@@ -88,7 +88,13 @@ jobs:
       - name: Get Parameters
         id: get-params
         run: |
-          PARAMS=$(aws ssm get-parameters-by-path --path "${SCHEMA_PARAM_BASE_NAME}/${SCHEMA_TYPE}/${ENV_TYPE}-${STAGE}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
+          PARAM_NAME=""
+          if [[ ${STAGE} == "canary" ]]; then
+            PARAM_NAME="canary"
+          else
+            PARAM_NAME="${ENV_TYPE}-${STAGE}"
+          fi
+          PARAMS=$(aws ssm get-parameters-by-path --path "${SCHEMA_PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PARAM_NAME}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
           PARAMS=$(echo "${PARAMS}" | jq -c 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
           echo "params=${PARAMS}" >> $GITHUB_OUTPUT
   deploy-kconf:

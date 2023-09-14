@@ -140,15 +140,16 @@ jobs:
             done
           }
 
-          if ! [[ ${ENV_TYPE} =~ ^(dev|qa|prod)$ ]]; then
-            echo "invalid env_type: ${env_type} for env: ${env_name}"
-            exit 1
-          elif ! [[ ${STAGE} =~ ^(canary|beta|latest)$ ]]; then
-            echo "invalid stage: ${STAGE}"
-            exit 1
-          fi
           for ENV in {dev,qa,prod}; do
-            if [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
+            if [[ ${ENV_TYPE} == "" ]]; then
+              ENV_TYPE=${ENV}
+            elif ! [[ ${ENV_TYPE} =~ ^(dev|qa|prod)$ ]]; then
+              echo "invalid env_type: ${env_type} for env: ${env_name}"
+              continue
+            elif ! [[ ${STAGE} =~ ^(canary|beta|latest)$ ]]; then
+              echo "invalid stage: ${STAGE}"
+              continue
+            elif [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
               continue
             elif [[ ${ENV_TYPE} =~ ^(dev|qa)$ && ${ENV} == "prod" ]]; then
               continue

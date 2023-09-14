@@ -1,0 +1,219 @@
+name: Deploy KConf
+run-name: Deploy KConf
+
+on:
+  workflow_call:
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID:
+        required: true
+      PLAYER_GITHUB_KCONF_TOKEN:
+        required: true
+    inputs:
+      stage:
+        description: "build for specific type - example: 'canary/beta/latest'"
+        required: true
+        type: string
+      env:
+        description: "env - example: 'qa/prod'"
+        required: false
+        type: string
+      schema-type:
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+        required: true
+        type: string
+      uiconf-new-version:
+        type: string
+        required: false
+        description: "not required - if no value is given it will increment the minor version - example 'from 1.00 to 1.01'"
+
+jobs:
+  retrieve-parameters:
+    name: build-kconf
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      SCHEMA_PARAM_BASE_NAME: /player/schema
+      PRODUCT_VERSION_PARAM_BASE_NAME: /player/versions/uiconf
+      SCHEMA_TYPE: ${{ inputs.schema-type }}
+      ENV_TYPE: ${{ inputs.env }}
+      STAGE: ${{ inputs.stage }}
+      PRODUCT_VERSION: ${{ inputs.uiconf-new-version }}
+    outputs:
+      params: ${{ steps.get-params.outputs.params }}
+      product-version: ${{ steps.get-product-version.outputs.version }}
+    steps:
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-session-name: ${{ github.run_id }}
+          aws-region: eu-central-1
+          mask-aws-account-id: true
+      - name: Get Product Version
+        id: get-product-version
+        run: |
+          function increment_version() {
+            echo "$1" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}'
+          }
+
+          if [[ ${STAGE} == "canary" ]]; then
+            echo "canary"
+            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --query 'Parameters[].Value' --output text)
+            if [[ ${oldVersion} == "NULL" ]]; then
+              oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
+              newVersion="${oldVersion}.001"
+            else
+              newVersion=$(increment_version "${oldVersion}")
+            fi
+          else
+            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
+            if [[ -z ${PRODUCT_VERSION} ]] ; then
+              newVersion=$(increment_version "${oldVersion}")
+            else
+              newVersion=${PRODUCT_VERSION}
+            fi
+
+            if [[ ${STAGE} == "latest" ]]; then
+              echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary = NULL"
+              aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
+            fi
+          fi
+          echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE} = ${newVersion}"
+          aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --value "${newVersion}" --type String --overwrite
+          
+          echo "new version is: ${newVersion}"
+          echo "version=${newVersion}" >> $GITHUB_OUTPUT
+      - name: Get Parameters
+        id: get-params
+        run: |
+          PARAM_NAME=""
+          if [[ ${STAGE} == "canary" ]]; then
+            PARAM_NAME="canary"
+          else
+            PARAM_NAME="${ENV_TYPE}-${STAGE}"
+          fi
+          PARAMS=$(aws ssm get-parameters-by-path --path "${SCHEMA_PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PARAM_NAME}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
+          PARAMS=$(echo "${PARAMS}" | jq -c 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
+          echo "params=${PARAMS}" >> $GITHUB_OUTPUT
+  deploy-kconf:
+    name: deploy-kconf
+    runs-on: ubuntu-latest
+    needs: [retrieve-parameters]
+    env:
+      PRODUCT_VERSION_PARAM_BASE_NAME: /player/versions/uiconf
+      SCHEMA_PARAM_BASE_NAME: /player/schema
+      PRODUCT_VERSION_YAML_BASE_NAME: .global.application.embedPlayKit.productVersions
+      PLAYKIT_VERSION_SCHEMA_BASE_NAME: .global.application.embedPlayKit.versions
+      SCHEMA_TYPE: ${{ inputs.schema-type }}
+      ENV_TYPE: ${{ inputs.env }}
+      STAGE: ${{ inputs.stage }}
+      PRODUCT_VERSION: ${{ needs.retrieve-parameters.outputs.product-version }}
+      PARAMS: ${{ needs.retrieve-parameters.outputs.params }}
+    outputs:
+      envs: ${{ steps.enumerate-environments.outputs.envs }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: kaltura/embed-playkit-saas-config-generic
+          ref: main
+          ssh-key: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
+      - name: Configure GitHub Credentials
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PLAYER_GITHUB_KCONF_TOKEN }}
+      - name: Enumerate Environments
+        id: enumerate-environments
+        run: |
+          ENVIRONMENTS=()
+
+          function get_environments() {
+            ENV_DELIMITER=$(echo "${1}" | cut -c1)
+            if [[ ${ENV_DELIMITER} == "p" ]]; then
+              VALUES_FILES="deployment/values.yaml"
+            else
+              VALUES_FILES=$(find deployment/regions/ -regex "^deployment\/regions\/[a-zA-Z0-9_-]+\/[a-zA-z]+${ENV_DELIMITER}.\/[a-zA-Z0-9_-]+\/values.yaml" -type f)
+            fi
+            echo "${VALUES_FILES}"
+          }
+
+          function add_environment() {
+            ENVIRONMENT="${1}"
+            for ENV in ${ENVIRONMENT}; do
+              ENVIRONMENTS+=("${ENV}")
+            done
+          }
+
+          for ENV in {dev,qa,prod}; do
+            if [[ ${ENV_TYPE} == "" ]]; then
+              ENV_TYPE=${ENV}
+            elif ! [[ ${ENV_TYPE} =~ ^(dev|qa|prod)$ ]]; then
+              echo "invalid env_type: ${env_type} for env: ${env_name}"
+              continue
+            elif ! [[ ${STAGE} =~ ^(canary|beta|latest)$ ]]; then
+              echo "invalid stage: ${STAGE}"
+              continue
+            elif [[ ${STAGE} == "canary" && ${ENV} == "prod" ]]; then
+              continue
+            elif [[ ${ENV_TYPE} =~ ^(dev|qa)$ && ${ENV} == "prod" ]]; then
+              continue
+            fi
+            add_environment "$(get_environments "${ENV}")"
+          done
+
+          echo "envs=${ENVIRONMENTS[@]}" >> $GITHUB_OUTPUT
+      - name: Update Helm Values
+        id: update_schema
+        env:
+          ENVIRONMENTS: ${{ steps.enumerate-environments.outputs.envs }}
+        run: |
+          for ENV in ${ENVIRONMENTS}; do
+            if [[ ${ENV} == "deployment/values.yaml" ]]; then
+              ENV_NAME="prod"
+            else
+              ENV_NAME=$(echo "${ENV}" | cut -d'/' -f5 | sort -u)
+            fi
+            echo "Running on ${ENV_NAME} ${ENV}"
+            for PLAYKIT in $(echo "${PARAMS}" | jq -r 'keys[]'); do
+              NAME=$(basename "${PLAYKIT}")
+              VERSION=$(echo "${PARAMS}" | jq -r ".\"${PLAYKIT}\"")
+              PLAYKIT_VERSION_PATH="${PLAYKIT_VERSION_SCHEMA_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}.${NAME}"
+              CURRENT_VERSION=$(yq "${PLAYKIT_VERSION_PATH}" "${ENV}" -r)
+          
+              if [[ ${VERSION} == "${CURRENT_VERSION}" ]]; then
+                continue
+              fi
+          
+              yq "${PLAYKIT_VERSION_PATH} = \"${VERSION}\"" "${ENV}" -i
+              if [[ $? -ne 0 ]]; then
+                echo "Failed to update ${ENV} with ${PLAYKIT_VERSION_PATH} = ${VERSION}"
+                exit 1
+              fi
+              echo "Updated: ${NAME} = \"${VERSION}\""
+            done
+
+            PRODUCT_VERSION_PATH="${PRODUCT_VERSION_YAML_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}"
+          
+            yq "${PRODUCT_VERSION_PATH} = \"${PRODUCT_VERSION}\"" "${ENV}" -i
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to update ${ENV} with ${PRODUCT_VERSION_PATH} = ${PRODUCT_VERSION}"
+              exit 1
+            fi
+          
+            NEW_PRODUCT_VERSION=$(yq "${PRODUCT_VERSION_PATH}" "${ENV}" -r)
+            echo "Successfully deployed new product version: ${NEW_PRODUCT_VERSION}"
+          done
+      - name: Commit and Push
+        id: commit-and-push
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add .
+          if [[ -z $(git status -s) ]]; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -am ":rocket: CI: Deploy ${SCHEMA_TYPE}-${STAGE} on ${ENV_TYPE}"
+          git push

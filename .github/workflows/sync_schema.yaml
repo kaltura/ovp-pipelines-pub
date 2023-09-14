@@ -1,0 +1,118 @@
+name: Sync Schema
+run-name: Sync Schema
+
+on:
+  workflow_call:
+    secrets:
+        PLAYER_CENTRAL_ACCOUNT_ID:
+          required: true
+        PLAYER_SERVICES_ACCOUNT_ID:
+          required: true
+        PLAYER_S3_BUCKET_DEPLOYMENT:
+          required: true
+    inputs:
+      schema-type:
+        description: Schema Type
+        required: true
+        #default: playerV3OvpVersions playerV3Versions playerV3PartnersVersions
+        type: string
+
+      stage:
+        description: Environment
+        required: true
+        #default: qa qa-beta prod-beta prod-latest canary
+        type: string
+
+env:
+  SCHEMA_TYPES: ${{ inputs.schema-type }}
+  STAGES: ${{ inputs.stage }}
+
+jobs:
+  sync-schema:
+    name: Sync Schema
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      manifests: ${{ steps.download-json-manifests.outputs.manifests }}
+    steps:
+    - name: "Assume Role: Central"
+      uses: aws-actions/configure-aws-credentials@v3
+      id: aws-central-credentials
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+        role-session-name: githubAction
+        aws-region: eu-central-1
+        mask-aws-account-id: true
+        output-credentials: true
+    - name: "Assume Role: NVP1"
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: us-east-1
+        aws-access-key-id: ${{ steps.aws-central-credentials.outputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ steps.aws-central-credentials.outputs.aws-secret-access-key }}
+        aws-session-token: ${{ steps.aws-central-credentials.outputs.aws-session-token }}
+        role-session-name: nvp1-${{ github.run_id }}
+        role-to-assume: arn:aws:iam::${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}:role/nvp1-deployment-role
+    - name: Download JSON Manifests from S3
+      id: download-json-manifests
+      run: |
+        WORKDIR="$(pwd)/tmp/schema"
+        mkdir -p "${WORKDIR}"
+
+        for schema in ${SCHEMA_TYPES}; do
+          for stage in ${STAGES}; do
+            JSON_MANIFEST_NAME="player-${stage}-${schema}.json"
+            echo "Running: ${JSON_MANIFEST_NAME}"
+            aws s3 cp "s3://${{ secrets.PLAYER_S3_BUCKET_DEPLOYMENT }}/player/schema/${JSON_MANIFEST_NAME}" "${WORKDIR}/${JSON_MANIFEST_NAME}"
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to download ${JSON_MANIFEST_NAME}"
+              continue
+            fi
+            PLAYKITS=$(jq -r '. | keys | .[]' "${WORKDIR}/${JSON_MANIFEST_NAME}")
+          done
+        done
+    - name: "Assume Role: Central"
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+        role-session-name: githubAction
+        aws-region: eu-central-1
+        mask-aws-account-id: true
+    - name: Populate Parameters
+      run: |
+        WORKDIR="$(pwd)/tmp/schema"
+        REGEX="player-(.*)-(.*).json"
+        PARAM_BASE_NAME="/player/schema"
+        for JSON_MANIFEST in "${WORKDIR}"/*.json; do
+            SCHEMA=""
+            STAGE=""
+            if [[ ${JSON_MANIFEST} =~ ${REGEX} ]]; then
+                STAGE="${BASH_REMATCH[1]}"
+                SCHEMA="${BASH_REMATCH[2]}"
+            else
+                echo "Failed to parse ${JSON_MANIFEST}"
+                exit 1
+            fi
+            echo "Running: ${SCHEMA}/${STAGE}"
+            DEST_PARAMS=$(aws ssm get-parameters-by-path --path "${PARAM_BASE_NAME}/${SCHEMA}/${STAGE}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
+            DEST_PARAMS=$(echo "${DEST_PARAMS}" | jq 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
+            PLAYKITS=$(jq -r '. | keys | .[]' "${JSON_MANIFEST}")
+            for playkit in ${PLAYKITS}; do
+                PARAM_NAME="${PARAM_BASE_NAME}/${SCHEMA}/${STAGE}/${playkit}"
+                VERSION=$(jq -r ".\"${playkit}\"" "${JSON_MANIFEST}")
+                CURRENT_VERSION=$(echo "${DEST_PARAMS}" | jq -r ".\"${PARAM_NAME}\"")
+                if [[ ${CURRENT_VERSION} == "${VERSION}" ]]; then
+                    continue
+                fi
+                aws ssm put-parameter --name "${PARAM_NAME}" --value "${VERSION}" --type String --overwrite --no-cli-pager > /dev/null 2>&1
+                RESULT=$?
+                if [[ ${RESULT} -ne 0 ]]; then
+                    echo "Failed to update ${PARAM_NAME} with ${VERSION}"
+                    exit 1
+                fi
+                echo "Updated ${playkit} with ${VERSION}"
+            done
+        done
+        

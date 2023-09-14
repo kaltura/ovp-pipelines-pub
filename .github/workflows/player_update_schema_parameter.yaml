@@ -1,0 +1,93 @@
+name: Update Parameter Store Schema
+run-name: Update Parameter Store Schema
+
+on:
+  workflow_call:
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID:
+        required: true
+    inputs:
+      env:
+        description: "env - example: 'qa/prod'"
+        required: false
+        type: string
+      type:
+        description: "choose player or plugin or dependency - example: 'plugin'"
+        required: true
+        type: string
+      schema-type:
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions/playerV3PartnersVersions/Chat_CollaborationVersions'"
+        required: true
+        type: string
+      name:
+        description: "name - example: 'playkit-youbora'"
+        required: true
+        type: string
+      version:
+        description: "version - example: '2.3.5-canary.5-39e87cf'"
+        required: true
+        type: string
+      player-type:
+        description: "player type - example 'ovp tv'"
+        required: false
+        type: string
+
+
+env:
+  PLAYERS: "ovp tv"
+
+jobs:
+  update-schema:
+    name: update-schema-paramater-store
+    runs-on: [ ubuntu-latest ]
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      SCHEMA_TYPE: ${{ inputs.schema-type }}
+      ENV_TYPE: ${{ inputs.env }}
+      TYPE: ${{ inputs.type }}
+      PLAYER_TYPE: ${{ inputs.player-type }}
+      VERSION: ${{ inputs.version }}
+      NAME: ${{ inputs.name }}
+    steps:
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-session-name: githubAction
+          aws-region: "eu-central-1"
+          mask-aws-account-id: true
+      - name: Update schema central deployment secret
+        run: |
+          PARAM_BASE_NAME="/player/schema"
+          PARAM_NAMES=()
+          
+          if [[ ${STAGE} == "" ]]; then
+              if [[ ${ENV_TYPE} == "prod" ]]; then
+                  STAGE="qa"
+              else
+                  STAGE="canary"
+              fi
+          fi
+          
+          if [[ ${TYPE} == "player" ]]; then
+              for i in ${PLAYER_TYPE}; do
+                  PARAM_NAMES+=("${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${STAGE}/kaltura-${i}-player")
+              done
+          else
+              PARAM_NAMES+=("${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${STAGE}/${NAME}")
+          fi
+          
+          for i in "${PARAM_NAMES[@]}"; do
+              PARAM_EXISTS=$(aws ssm get-parameter --name "${i}" --with-decryption --query Parameter.Value --output text 2>&1)
+              if [[ $? -ne 0 ]]; then
+                  RESULT=$(aws ssm put-parameter --name "${i}" --value "${VERSION}" --type String --overwrite)
+                  echo "Created ${i} with value ${VERSION}"
+              else
+                  RESULT=$(aws ssm put-parameter --name "$i" --value "${VERSION}" --type String --overwrite)
+                  echo "Updated ${i} with value ${VERSION}"
+              fi
+          done
+          
+          

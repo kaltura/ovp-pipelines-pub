@@ -1,0 +1,109 @@
+name: Promote schema
+run-name: Promote schema
+
+on:
+  workflow_call:
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID:
+        required: true
+    inputs:
+      promotion-type:
+        description: "from - to"
+        required: true
+        type: string
+      schema-type:
+        description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
+        required: true
+        type: string
+    outputs:
+      stage:
+        description: "stage - example: 'beta/latest'"
+        value: ${{ jobs.promote-schema.outputs.stage }}
+      env:
+        description: "env - example: 'qa/prod'"
+        value: ${{ jobs.promote-schema.outputs.env }}
+
+jobs:
+  promote-schema:
+    runs-on: [ ubuntu-latest ]
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      stage: ${{ steps.check-stage.outputs.stage }}
+      env: ${{ steps.check-environment.outputs.env }}
+    env:
+      PROMOTION_TYPE: ${{ inputs.promotion-type }}
+      SCHEMA_TYPE: ${{ inputs.schema-type }}
+      PARAM_BASE_NAME: /player/schema
+    steps:
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-session-name: ${{ github.run_id }}
+          aws-region: eu-central-1
+          mask-aws-account-id: true
+      - name: Check Environment
+        id: check-environment
+        run: |
+          PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
+          PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
+          ENVIRONMENT=$(echo "${PROMOTION_TO}" | cut -d'-' -f1)
+          echo "Environment: ${ENVIRONMENT}"
+          if [[ ${ENVIRONMENT} != @(prod|qa) ]]; then
+              echo "Invalid environment type"
+              exit 1
+          fi
+          echo "build for env ${ENVIRONMENT}"
+          echo "env=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+
+      - name: Check Stage
+        id: check-stage
+        run: |
+          PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
+          PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
+          STAGE=$(echo "${PROMOTION_TO}" | cut -d'-' -f2)
+          echo "Stage: ${STAGE}"
+          if [[ ${STAGE} != @(beta|latest) ]]; then
+              echo "Invalid stage type"
+              exit 1
+          fi
+          echo "build for stage ${STAGE}"
+          echo "stage=${STAGE}" >> $GITHUB_OUTPUT
+
+      - name: Promote schema parameters
+        id: promote-schema-parameters
+        run: |
+          PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
+          PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
+          SOURCE_PARAMS=""
+          DEST_PARAMS=""
+
+          echo "Promoting ${PROMOTION_FROM} to ${PROMOTION_TO}"
+          
+          SOURCE_PARAMS=$(aws ssm get-parameters-by-path --path "${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_FROM}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
+          SOURCE_PARAMS=$(echo "${SOURCE_PARAMS}" | jq 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
+          
+          DEST_PARAMS=$(aws ssm get-parameters-by-path --path "${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
+          DEST_PARAMS=$(echo "${DEST_PARAMS}" | jq 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
+          
+          for i in $(echo "${SOURCE_PARAMS}" | jq -r 'keys[]'); do
+              NAME=$(basename "${i}")
+              VERSION=$(echo "${SOURCE_PARAMS}" | jq -r ".\"${i}\"")
+              CURRENT_VERSION=$(echo "${DEST_PARAMS}" | jq -r ".\"${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}/${NAME}\"")
+              DESTINATION_PARAM_NAME="${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}/${NAME}"
+          
+              #CURRENT_PARAM=$(aws ssm get-parameter --name "${DESTINATION_PARAM_NAME}" --with-decryption --query Parameter.Value --output text 2>&1)
+              if [[ ${CURRENT_VERSION} == "null" ]]; then
+                  RESULT=$(aws ssm put-parameter --name "${DESTINATION_PARAM_NAME}" --value "${VERSION}" --type String --overwrite)
+                  echo "Created ${DESTINATION_PARAM_NAME} with value ${VERSION}"
+              else
+                  if [[ ${CURRENT_VERSION} == "${VERSION}" ]]; then
+                      echo "No updates for: ${NAME}"
+                      continue
+                  fi
+                  RESULT=$(aws ssm put-parameter --name "${DESTINATION_PARAM_NAME}" --value "${VERSION}" --type String --overwrite)
+                  echo "Updated ${DESTINATION_PARAM_NAME} with value ${VERSION}"
+              fi
+          done

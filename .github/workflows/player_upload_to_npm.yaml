@@ -96,8 +96,8 @@ jobs:
                 # find if package has changed
                 package_version=$(echo $(node -p "require('./package.json').version;"))
                 package_version_commit=$(git log --oneline | fgrep "${package_version}" | awk '{print $1}')
-                package_modified_feat=$(git log --oneline $prev_version_commit..HEAD | egrep '(feat)\((FEC|FEV)-[0-9]+\):')
-                package_modified_fix=$(git log --oneline $prev_version_commit..HEAD | egrep '(fix)\((FEC|FEV)-[0-9]+\):')
+                package_modified_feat=$(git log --oneline $prev_version_commit..HEAD | egrep '(feat)\((FEC|FEV|SUP|PSVAMB)-[0-9]+\):')
+                package_modified_fix=$(git log --oneline $prev_version_commit..HEAD | egrep '(fix)\((FEC|FEV|SUP|PSVAMB)-[0-9]+\):')
 
                 cd ${my_dir}
 

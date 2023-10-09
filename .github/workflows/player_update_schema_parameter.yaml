@@ -62,7 +62,7 @@ jobs:
         run: |
           PARAM_BASE_NAME="/player/schema"
           PARAM_NAMES=()
-          
+
           if [[ ${STAGE} == "" ]]; then
               if [[ ${ENV_TYPE} == "prod" ]]; then
                   STAGE="qa"
@@ -70,7 +70,7 @@ jobs:
                   STAGE="canary"
               fi
           fi
-          
+
           if [[ ${TYPE} == "player" ]]; then
               for i in ${PLAYER_TYPE}; do
                   PARAM_NAMES+=("${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${STAGE}/kaltura-${i}-player")
@@ -78,16 +78,16 @@ jobs:
           else
               PARAM_NAMES+=("${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${STAGE}/${NAME}")
           fi
-          
+
           for i in "${PARAM_NAMES[@]}"; do
-              PARAM_EXISTS=$(aws ssm get-parameter --name "${i}" --with-decryption --query Parameter.Value --output text 2>&1)
-              if [[ $? -ne 0 ]]; then
-                  RESULT=$(aws ssm put-parameter --name "${i}" --value "${VERSION}" --type String --overwrite)
+              RESULT=$(aws ssm get-parameter --name "${i}" --with-decryption --query Parameter.Value --output text 2>&1 > /dev/null)
+              RETURN=$?
+              RESULT=$(aws ssm put-parameter --name "${i}" --value "${VERSION}" --type String --overwrite --no-cli-pager 2>&1 > /dev/null)
+              if [[ $RETURN -ne 0 ]]; then
                   echo "Created ${i} with value ${VERSION}"
               else
-                  RESULT=$(aws ssm put-parameter --name "$i" --value "${VERSION}" --type String --overwrite)
                   echo "Updated ${i} with value ${VERSION}"
               fi
           done
-          
-          
+
+          exit 0

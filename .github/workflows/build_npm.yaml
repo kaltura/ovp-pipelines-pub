@@ -32,7 +32,7 @@ jobs:
         id: get-commit
         run: |
           COMMIT=$(jq -r '.commands.bookmark.standalone[]' kaltura-ws.json)
-          echo "standalone-commit=${$COMMIT}" >> $GITHUB_OUTPUT
+          echo "standalone-commit=${COMMIT}" >> $GITHUB_OUTPUT
 
   build:
     runs-on: ubuntu-latest

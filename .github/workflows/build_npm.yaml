@@ -14,6 +14,11 @@ on:
         required: false
         type: string
         default: build
+      name:
+        description: "name of the package - example: 'my-package'"
+        required: false
+        type: string
+        default: my-package
 
 jobs:
   get-standalone-commit:
@@ -52,3 +57,29 @@ jobs:
         run: npm install
       - name: Build
         run: npm run ${{ inputs.build-command }}
+      - name: Zip Package
+        run: zip -r latest.zip dist
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: latest
+          path: latest.zip
+          retention-days: 5
+      - name: Get Release Info
+        id: get-release-info
+        run: |
+          DATA=$(curl -s -X GET \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref }})
+          UPLOAD_URL=$(echo $DATA | jq -r '.upload_url')
+          echo "upload-url=${UPLOAD_URL}" >> $GITHUB_OUTPUT
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get-release-info.outputs.upload_url }}
+          asset_path: ./latest.zip
+          asset_name: ${{ inputs.name }}-${{ github.ref }}.zip
+          asset_content_type: application/zip

@@ -40,3 +40,4 @@ jobs:
           upload_url: ${{ steps.get-release-info.outputs.upload-url }}
           asset_path: ./${{ inputs.asset-name}}
           asset_name: ${{ inputs.asset-name}}
+          asset_content_type: application/zip

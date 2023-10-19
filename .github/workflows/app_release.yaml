@@ -33,7 +33,7 @@ jobs:
   build-npm:
     if: (always()) && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
     needs: accept-prod
-    uses: ./.github/workflows/build_npm.yaml
+    uses: ./.github/workflows/run_npm.yaml
     with:
       build-steps: ${{ inputs.build-steps }}
   upload-asset:

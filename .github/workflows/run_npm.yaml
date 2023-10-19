@@ -1,5 +1,5 @@
-name: Build NPM Package
-run-name: Build NPM Package
+name: Run NPM
+run-name: Run NPM
 
 on:
   workflow_call:
@@ -37,19 +37,19 @@ on:
     outputs:
       name:
         description: name of the package
-        value: ${{ jobs.build.outputs.name }}
+        value: ${{ jobs.run.outputs.name }}
       version:
         description: version of the package
-        value: ${{ jobs.build.outputs.version }}
+        value: ${{ jobs.run.outputs.version }}
       full-name:
         description: full name of the package
-        value: ${{ jobs.build.outputs.full-name }}
+        value: ${{ jobs.run.outputs.full-name }}
       artifact:
         description: artifact name
-        value: ${{ jobs.build.outputs.artifact }}
+        value: ${{ jobs.run.outputs.artifact }}
 
 jobs:
-  build:
+  run:
     runs-on: ubuntu-latest
     outputs:
       name: ${{ steps.npm-package.outputs.name }}

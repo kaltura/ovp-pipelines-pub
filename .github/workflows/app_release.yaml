@@ -37,7 +37,7 @@ jobs:
     with:
       build-steps: ${{ inputs.build-steps }}
   upload-asset:
-    if: (always()) && (needs.build-npm.result == 'success')
+    if: (always()) && inputs.upload-asset && (needs.build-npm.result == 'success')
     needs: build-npm
     uses: ./.github/workflows/upload_release_asset.yaml
     with:

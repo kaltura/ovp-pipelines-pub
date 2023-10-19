@@ -29,6 +29,11 @@ on:
         required: false
         type: string
         default: dist
+      upload-artifact:
+        description: upload artifact
+        required: false
+        type: boolean
+        default: false
     outputs:
       name:
         description: name of the package
@@ -76,6 +81,7 @@ jobs:
       - name: Build NPM Package
         run: echo '${{ inputs.build-steps }}' | jq -r '.[] | @sh' | xargs -I {} sh -c "npm run {}"
       - name: Zip Package
+        if: ${{ inputs.upload-artifact }}
         id: zip
         run: |
           ARTIFACT=${{ steps.npm-package.outputs.name }}-${{ steps.npm-package.outputs.version }}.zip
@@ -86,6 +92,7 @@ jobs:
           cd ..
           echo "artifact=${ARTIFACT}" >> $GITHUB_OUTPUT
       - name: Upload Artifact
+        if: ${{ inputs.upload-artifact }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.npm-package.outputs.full-name }}

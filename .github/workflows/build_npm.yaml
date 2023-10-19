@@ -58,15 +58,18 @@ jobs:
       - name: Build NPM Package
         run: echo '${{ inputs.build-steps }}' | jq -r '.[] | @sh' | xargs -I {} sh -c "npm run {}"
       - name: Zip Package
+        id: zip
         run: |
+          ARTIFACT=${{ steps.npm-package.outputs.name }}-${{ steps.npm-package.outputs.version }}.zip
           cd ${{ inputs.build-output-dir }}
           zip -r \
-            ../${{ steps.npm-package.outputs.name }}-${{ steps.npm-package.outputs.version }}.zip
+            "../${ARTIFACT}" \
             .
           cd ..
+          echo "artifact=${ARTIFACT}" >> $GITHUB_OUTPUT
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.npm-package.outputs.full-name }}
-          path: latest.zip
+          path: ${{ steps.npm-package.outputs.artifact }}
           retention-days: 1

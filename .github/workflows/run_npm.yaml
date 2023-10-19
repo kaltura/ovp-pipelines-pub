@@ -28,12 +28,17 @@ on:
         description: build output directory
         required: false
         type: string
-        default: dist
+        default: build-${{ github.run_id }}
+      build-artifacts:
+        description: build output directory
+        required: false
+        type: string
       upload-artifact:
         description: upload artifact
         required: false
         type: boolean
         default: false
+
     outputs:
       name:
         description: name of the package
@@ -91,18 +96,27 @@ jobs:
         if: ${{ inputs.upload-artifact }}
         id: zip
         run: |
-          ARTIFACT="${{ steps.npm-package.outputs.name }}-${{ steps.npm-package.outputs.version }}.zip"
-          cd ${{ inputs.build-output-dir }}
+          ARTIFACT="${{ steps.npm-package.outputs.name }}-v${{ steps.npm-package.outputs.version }}.zip"
+          OUTPUT_DIR=${{ inputs.build-output-dir }}
+          BUILD_ARTIFACTS=${{ inputs.build-artifacts }}
+
+          mkdir -p $OUTPUT_DIR
+          cd $OUTPUT_DIR
+
+          echo "${BUILD_ARTIFACTS}" | jq -r '.[] | @sh' | xargs -I {} sh -c "cp -r ../{} ."
+
           zip -r \
             "../${ARTIFACT}" \
             .
+
           cd ..
+
           echo "Crearted artifact archive: $ARTIFACT"
           echo "artifact=${ARTIFACT}" >> $GITHUB_OUTPUT
       - name: Upload Artifact
         if: ${{ inputs.upload-artifact }}
         uses: actions/upload-artifact@v3
         with:
-          name: base-${{ steps.zip.outputs.artifact }}
+          name: ${{ steps.zip.outputs.artifact }}
           path: ${{ steps.zip.outputs.artifact }}
           retention-days: 1

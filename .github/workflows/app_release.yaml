@@ -27,11 +27,11 @@ on:
         description: Test steps
         required: false
         type: string
-      package-items:
+      build-artifacts:
         description: Additional build items
         required: false
         type: string
-        default: ''
+        default: '["dist/**/*"]'
 
 jobs:
   accept-prod:
@@ -65,18 +65,11 @@ jobs:
     with:
       build-steps: ${{ inputs.build-steps }}
       upload-artifact: ${{ inputs.upload-asset }}
-  package-build:
-    name: Package Build
-    if: (always()) && (needs.build-npm.result == 'success')
-    needs: build-npm
-    uses: ./.github/workflows/package_build.yaml
-    with:
-      package-items: ${{ inputs.package-items }}
-      artifact-name: ${{ needs.build-npm.outputs.artifact-name }}
+      build-artifacts: ${{ inputs.build-artifacts }}
   upload-asset:
     name: Upload Asset
     if: (always()) && inputs.upload-asset && (needs.build-npm.result == 'success')
-    needs: [build-npm, package-build]
+    needs: build-npm
     uses: ./.github/workflows/upload_release_asset.yaml
     with:
       asset-name: ${{ needs.build-npm.outputs.artifact-name }}

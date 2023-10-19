@@ -1,0 +1,54 @@
+name: Package Build
+run-name: Package Build
+
+on:
+  workflow_call:
+    inputs:
+      artifact-name:
+        description: Artifact name
+        required: true
+        type: string
+      package-items:
+        description: Additional items to include in the artifact
+        required: false
+        type: string
+    outputs:
+      artifact-name:
+        description: Artifact name
+        value: ${{ jobs.package.outputs.artifact-name }}
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-name: final-${{ inputs.artifact-name }}
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ./
+      - name: Extract artifact
+        run: |
+          mkdir -p ./package/
+          unzip -q ${{ inputs.artifact-name }} -d ./package/
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ./repo
+      - name: Add additional items
+        if: ${{ inputs.package-items }}
+        run: |
+          if [ -n "${{ inputs.package-items }}" ]; then
+            echo "${{ inputs.package-items }}" | xargs -I {} cp -r {} ./package/
+          fi
+      - name: Zip Package
+        run: |
+          cd ./package/
+          zip -r ../${{ inputs.artifact-name }} *
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: final-${{ inputs.artifact-name }}
+          path: ${{ inputs.artifact-name }}
+          retention-days: 1

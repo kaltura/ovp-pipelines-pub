@@ -44,9 +44,9 @@ on:
       full-name:
         description: full name of the package
         value: ${{ jobs.run.outputs.full-name }}
-      artifact:
+      artifact-name:
         description: artifact name
-        value: ${{ jobs.run.outputs.artifact }}
+        value: ${{ jobs.run.outputs.artifact-name }}
 
 jobs:
   run:
@@ -55,7 +55,7 @@ jobs:
       name: ${{ steps.npm-package.outputs.name }}
       version: ${{ steps.npm-package.outputs.version }}
       full-name: ${{ steps.npm-package.outputs.full-name }}
-      artifact: ${{ steps.zip.outputs.artifact }}
+      artifact-name: ${{ steps.zip.outputs.artifact }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,6 +103,6 @@ jobs:
         if: ${{ inputs.upload-artifact }}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ steps.zip.outputs.artifact }}
+          name: base-${{ steps.zip.outputs.artifact }}
           path: ${{ steps.zip.outputs.artifact }}
           retention-days: 1

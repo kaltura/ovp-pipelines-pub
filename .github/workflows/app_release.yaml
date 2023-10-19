@@ -27,6 +27,11 @@ on:
         description: Test steps
         required: false
         type: string
+      package-items:
+        description: Additional build items
+        required: false
+        type: string
+        default: ''
 
 jobs:
   accept-prod:
@@ -60,10 +65,18 @@ jobs:
     with:
       build-steps: ${{ inputs.build-steps }}
       upload-artifact: ${{ inputs.upload-asset }}
+  package-build:
+    name: Package Build
+    if: (always()) && (needs.build-npm.result == 'success')
+    needs: build-npm
+    uses: ./.github/workflows/package_build.yaml
+    with:
+      package-items: ${{ inputs.package-items }}
+      artifact-name: ${{ needs.build-npm.outputs.artifact-name }}
   upload-asset:
     name: Upload Asset
     if: (always()) && inputs.upload-asset && (needs.build-npm.result == 'success')
-    needs: build-npm
+    needs: [build-npm, package-build]
     uses: ./.github/workflows/upload_release_asset.yaml
     with:
-      asset-name: ${{ needs.build-npm.outputs.artifact }}
+      asset-name: ${{ needs.build-npm.outputs.artifact-name }}

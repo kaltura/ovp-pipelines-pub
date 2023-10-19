@@ -40,7 +40,7 @@ jobs:
           ref: ${{ inputs.build-ref }}
       - name: Read NPM Package Info
         id: npm-package
-        run:
+        run: |
           FILTER="name version"
           for i in $FILTER; do
             echo "$i=$(jq -r ".$i" package.json)" >> $GITHUB_OUTPUT

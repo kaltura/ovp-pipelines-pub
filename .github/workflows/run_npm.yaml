@@ -55,7 +55,7 @@ jobs:
       name: ${{ steps.npm-package.outputs.name }}
       version: ${{ steps.npm-package.outputs.version }}
       full-name: ${{ steps.npm-package.outputs.full-name }}
-      artifact: ${{ steps.zip.outputs.name }}
+      artifact: ${{ steps.zip.outputs.artifact }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

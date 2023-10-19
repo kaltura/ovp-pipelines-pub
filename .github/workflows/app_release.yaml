@@ -36,6 +36,7 @@ jobs:
     uses: ./.github/workflows/run_npm.yaml
     with:
       build-steps: ${{ inputs.build-steps }}
+      upload-artifact: ${{ inputs.upload-asset }}
   upload-asset:
     if: (always()) && inputs.upload-asset && (needs.build-npm.result == 'success')
     needs: build-npm

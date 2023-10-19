@@ -1,0 +1,118 @@
+name: Upload to S3
+run-name: Upload to S3
+
+on:
+  workflow_call:
+    secrets:
+      PLAYER_CENTRAL_ACCOUNT_ID:
+        required: true
+      PLAYER_SERVICES_ACCOUNT_ID:
+        required: true
+      PLAYER_S3_BUCKET_APPS:
+        required: true
+    inputs:
+      artifact_name:
+        required: true
+        type: string
+      artifact_path:
+        required: true
+        type: string
+
+jobs:
+  get-accounts:
+    runs-on: [ubuntu-latest]
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      accounts: ${{ steps.accounts.outputs.accounts }}
+    steps:
+      - name: "Assume Role: Central"
+        uses: aws-actions/configure-aws-credentials@v3
+        id: aws-central-credentials
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-session-name: githubAction
+          aws-region: eu-central-1
+          mask-aws-account-id: true
+          output-credentials: true
+
+      - name: Get secret
+        id: secret_name
+        run: |
+          secret_name="s3-aws-all-accounts"
+          echo $secret_name
+          echo "secret_name=$secret_name" >> $GITHUB_OUTPUT
+
+      - name: Get environments list
+        id: accounts
+        run: |
+          aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
+          accounts=$(echo $aws_envs | jq -c '.[]' | while read i; do jq -n --arg env "$(jq -r '.env' <<< "$i")" '{"env": $env, "os": "ubuntu-latest", "node-version": "17.x"}' ; done | jq -s -c .)
+          echo $accounts
+          echo "accounts={\"include\":$accounts}" >> $GITHUB_OUTPUT
+
+  upload_to_s3:
+    name: Upload ${{ inputs.artifact_name }} to S3
+    runs-on: [ubuntu-latest]
+    needs: get-accounts
+    strategy:
+      matrix: ${{fromJSON(needs.get-accounts.outputs.accounts)}}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: "Assume Role: Central"
+        uses: aws-actions/configure-aws-credentials@v3
+        id: aws-central-credentials
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:role/central-oidc-github-actions
+          role-session-name: githubAction
+          aws-region: eu-central-1
+          mask-aws-account-id: true
+          output-credentials: true
+
+      - name: Get secret
+        id: secret_name
+        run: |
+          secret_name="s3-aws-all-accounts"
+          echo $secret_name
+          echo "secret_name=$secret_name" >> $GITHUB_OUTPUT
+
+      - name: Get specific account details
+        id: specific_account
+        run: |
+          aws_envs=$(aws secretsmanager get-secret-value --secret-id  arn:aws:secretsmanager:eu-central-1:${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}:secret:${{ steps.secret_name.outputs.secret_name }} --query SecretString --output text | jq -c .)
+          echo $aws_envs | jq -c '.[]' | while read i; do account_id=$(jq -r '.account_id' <<< "$i"); echo "::add-mask::$account_id"; done
+          specific_account=$(echo $aws_envs | jq -c '.[] | select(.env | contains("${{ matrix.env }}"))')
+          echo "specific_account=$specific_account" >> $GITHUB_OUTPUT
+
+      - name: Get account id
+        id: account_id
+        run: |
+          account_id=$(echo '${{ steps.specific_account.outputs.specific_account }}' | jq -r '.account_id')
+          echo "account_id=$account_id" >> $GITHUB_OUTPUT
+
+      - name: Get region
+        id: region
+        run: |
+          region=$(echo '${{ steps.specific_account.outputs.specific_account }}' | jq -r '.region')
+          echo "region=$region" >> $GITHUB_OUTPUT
+
+      - name: "Assume Role: Services Account"
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ steps.aws-central-credentials.outputs.aws-access-key-id }}
+          aws-secret-access-key: ${{ steps.aws-central-credentials.outputs.aws-secret-access-key }}
+          aws-session-token: ${{ steps.aws-central-credentials.outputs.aws-session-token }}
+          role-session-name: nvp1-${{ github.run_id }}
+          role-to-assume: ${{ steps.account_id.outputs.account_id }}:role/${{ matrix.env }}-kalt-ovp-apps-role
+
+      - uses: actions/download-artifact@v3
+        id: download
+        with:
+          name: ${{ github.event.inputs.artifact_name }}
+      - name: Upload Artifact to S3
+        run: |
+          aws s3 cp ${{ steps.download.outputs.download-path }} s3://${{ secrets.PLAYER_S3_BUCKET_APPS }}/${{ inputs.artifact_path }}/${{ inputs.artifact_name }}

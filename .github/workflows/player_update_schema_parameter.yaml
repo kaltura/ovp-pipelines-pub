@@ -58,7 +58,8 @@ jobs:
           role-session-name: githubAction
           aws-region: "eu-central-1"
           mask-aws-account-id: true
-      - name: Update schema central deployment secret
+      - name: Update central playkit schema
+        shell: bash {0}
         run: |
           PARAM_BASE_NAME="/player/schema"
           PARAM_NAMES=()

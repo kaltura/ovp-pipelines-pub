@@ -62,6 +62,7 @@ jobs:
           cd ${{ inputs.build-output-dir }}
           zip -r \
             ../${{ steps.npm-package.outputs.name }}-${{ steps.npm-package.outputs.version }}.zip
+            .
           cd ..
       - name: Upload Artifact
         uses: actions/upload-artifact@v3

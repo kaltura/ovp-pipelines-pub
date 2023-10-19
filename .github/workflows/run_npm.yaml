@@ -30,7 +30,15 @@ on:
         type: string
         default: build-${{ github.run_id }}
       build-artifacts:
-        description: build output directory
+        description: build artifacts to package
+        required: false
+        type: string
+      build-cache:
+        description: enable cache
+        required: false
+        type: string
+      build-cache-key:
+        description: specific cache key
         required: false
         type: string
       upload-artifact:

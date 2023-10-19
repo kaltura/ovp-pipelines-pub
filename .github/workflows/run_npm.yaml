@@ -68,7 +68,7 @@ jobs:
           for i in $FILTER; do
             echo "$i=$(jq -r ".$i" package.json)" >> $GITHUB_OUTPUT
           done
-          echo "full-name=$(jq -r ".name + \"-\" + .version" package.json)" >> $GITHUB_OUTPUT
+          echo "full-name=$(jq -r ".name + \"-v\" + .version" package.json)" >> $GITHUB_OUTPUT
       - name: Remove Node Modules
         if: ${{ inputs.remove-node-modules }}
         run: rm -rf node_modules

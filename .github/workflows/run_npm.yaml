@@ -96,6 +96,6 @@ jobs:
         if: ${{ inputs.upload-artifact }}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ steps.npm-package.outputs.full-name }}
+          name: ${{ steps.zip.outputs.artifact }}
           path: ${{ steps.zip.outputs.artifact }}
           retention-days: 1

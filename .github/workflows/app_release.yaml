@@ -39,18 +39,21 @@ jobs:
         run: |
           echo "accepted"
   lint-npm:
+    name: Lint NPM
     if: (always()) && inputs.lint-steps && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
     needs: accept-prod
     uses: ./.github/workflows/run_npm.yaml
     with:
       build-steps: ${{ inputs.lint-steps }}
   test-npm:
+    name: Test NPM
     if: (always()) && inputs.test-steps && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
     needs: accept-prod
     uses: ./.github/workflows/run_npm.yaml
     with:
       build-steps: ${{ inputs.test-steps }}
   build-npm:
+    name: Build NPM
     if: (always()) && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
     needs: accept-prod
     uses: ./.github/workflows/run_npm.yaml
@@ -58,6 +61,7 @@ jobs:
       build-steps: ${{ inputs.build-steps }}
       upload-artifact: ${{ inputs.upload-asset }}
   upload-asset:
+    name: Upload Asset
     if: (always()) && inputs.upload-asset && (needs.build-npm.result == 'success')
     needs: build-npm
     uses: ./.github/workflows/upload_release_asset.yaml

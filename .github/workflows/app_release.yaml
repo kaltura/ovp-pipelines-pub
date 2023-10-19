@@ -19,6 +19,14 @@ on:
         #required: true
         type: string
         default: dev
+      lint-steps:
+        description: Lint steps
+        required: false
+        type: string
+      test-steps:
+        description: Test steps
+        required: false
+        type: string
 
 jobs:
   accept-prod:
@@ -30,6 +38,18 @@ jobs:
       - name: accept workflow on prod
         run: |
           echo "accepted"
+  lint-npm:
+    if: (always()) && inputs.lint-steps && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
+    needs: accept-prod
+    uses: ./.github/workflows/run_npm.yaml
+    with:
+      build-steps: ${{ inputs.lint-steps }}
+  test-npm:
+    if: (always()) && inputs.test-steps && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
+    needs: accept-prod
+    uses: ./.github/workflows/run_npm.yaml
+    with:
+      build-steps: ${{ inputs.test-steps }}
   build-npm:
     if: (always()) && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
     needs: accept-prod

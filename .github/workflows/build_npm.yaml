@@ -29,10 +29,28 @@ on:
         required: false
         type: string
         default: dist
+    outputs:
+      name:
+        description: name of the package
+        value: ${{ jobs.build.outputs.name }}
+      version:
+        description: version of the package
+        value: ${{ jobs.build.outputs.version }}
+      full-name:
+        description: full name of the package
+        value: ${{ jobs.build.outputs.full-name }}
+      artifact:
+        description: artifact name
+        value: ${{ jobs.build.outputs.artifact }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.npm-package.outputs.name }}
+      version: ${{ steps.npm-package.outputs.version }}
+      full-name: ${{ steps.npm-package.outputs.full-name }}
+      artifact: ${{ steps.zip.outputs.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

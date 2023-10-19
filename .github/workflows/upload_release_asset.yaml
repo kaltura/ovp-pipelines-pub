@@ -8,10 +8,7 @@ on:
         description: tag name of the release
         required: false
         type: string
-      release-name:
-        description: name of the release
-        required: true
-        type: string
+        default: ${{ github.ref_name }}
       asset-name:
         description: name of the asset
         required: true
@@ -20,12 +17,17 @@ jobs:
   upload-release-asset:
     runs-on: ubuntu-latest
     steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.asset-name }}
+          path: ./
       - name: Get Release Info
         id: get-release-info
         run: |
           DATA=$(curl -s -X GET \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME})
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${{ inputs.ref }})
 
           UPLOAD_URL=$(echo $DATA | jq -r '.upload_url')
           echo "upload-url=${UPLOAD_URL}" >> $GITHUB_OUTPUT
@@ -37,5 +39,5 @@ jobs:
         with:
           upload_url: ${{ steps.get-release-info.outputs.upload-url }}
           asset_path: ./${{ inputs.asset-name}}
-          asset_name: ${{ inputs.asset-name }}-${{ github.ref_name }}.zip
+          asset_name: ${{ inputs.asset-name }}-${{ inputs.ref }}.zip
           asset_content_type: application/zip

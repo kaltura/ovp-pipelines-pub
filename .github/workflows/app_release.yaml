@@ -1,0 +1,44 @@
+## CI - App Release
+name: App Release
+run-name: App Release
+
+on:
+  workflow_call:
+    inputs:
+      build-steps:
+        description: Build steps
+        required: false
+        type: string
+      upload-asset:
+        description: Upload asset
+        required: false
+        type: boolean
+        default: false
+      env:
+        description: Environment
+        #required: true
+        type: string
+        default: dev
+
+jobs:
+  accept-prod:
+    if: ${{ inputs.env == 'prod' }}
+    runs-on: ubuntu-latest
+    name: Accept Prod
+    environment: Prod
+    steps:
+      - name: accept workflow on prod
+        run: |
+          echo "accepted"
+  build-npm:
+    if: (always()) && (needs.accept-prod.result == 'success' || needs.accept-prod.result == 'skipped')
+    needs: accept-prod
+    uses: ./.github/workflows/build_npm.yaml
+    with:
+      build-steps: ${{ inputs.build-steps }}
+  upload-asset:
+    if: (always()) && (needs.build-npm.result == 'success')
+    needs: build-npm
+    uses: ./.github/workflows/upload_release_asset.yaml
+    with:
+      asset-name: ${{ needs.build-npm.outputs.artifact }}

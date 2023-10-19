@@ -90,6 +90,7 @@ jobs:
             "../${ARTIFACT}" \
             .
           cd ..
+          echo "Crearted artifact archive: $ARTIFACT"
           echo "artifact=${ARTIFACT}" >> $GITHUB_OUTPUT
       - name: Upload Artifact
         if: ${{ inputs.upload-artifact }}

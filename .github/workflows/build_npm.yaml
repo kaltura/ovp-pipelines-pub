@@ -56,7 +56,7 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
       - name: Build NPM Package
-        run: echo '${{ inputs.build-steps }}' | jq -r '.[] | @sh' | xargs -I {} echo -c npm run {}
+        run: echo '${{ inputs.build-steps }}' | jq -r '.[] | @sh' | xargs -I {} sh -c npm run {}
       - name: Zip Package
         run: |
           cd ${{ inputs.build-output-dir }}

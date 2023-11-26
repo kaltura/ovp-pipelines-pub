@@ -22,7 +22,7 @@ jobs:
 
           pkg_modified() {
               prev_version_commit=$(git log --oneline | fgrep "$(pkg_version)" | awk '{print $1}')
-              echo $(git log --oneline $prev_version_commit..HEAD | egrep '(fix|feat)\((FEC|FEV|SUP|PSVAMB)-[0-9]+\):')
+              echo $(git log --oneline $prev_version_commit..HEAD | egrep '(fix|feat)\((FEC|FEV|SUP|PSVAMB|ADA)-[0-9]+\):')
           }
 
           my_dir=$(pwd)

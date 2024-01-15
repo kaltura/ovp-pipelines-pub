@@ -123,7 +123,7 @@ jobs:
           if [ "${{ inputs.env }}" = "prod" ]; then
             yarn run release
           else
-            yarn run release --prerelease canary --skip.commit=true --skip.tag=true
+            yarn run release --prerelease "${{ inputs.env }}" --skip.commit=true --skip.tag=true
           fi
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
@@ -134,7 +134,7 @@ jobs:
           if [ "${{ inputs.env }}" = "prod" ]; then
             yarn run release
           else
-            yarn run release --prerelease canary --skip.commit=true --skip.tag=true
+            yarn run release --prerelease "${{ inputs.env }}" --skip.commit=true --skip.tag=true
           fi
 
       - name: Update version in package.json file
@@ -142,7 +142,7 @@ jobs:
           sha=$(echo "${GITHUB_SHA::7}")
           currentVersion=$(npx -c 'echo "$npm_package_version"')
           commitNumberAfterTag=$(git rev-list  `git rev-list --tags --no-walk --max-count=1`..HEAD --count)
-          newVersion=$(echo ${currentVersion} | sed -e "s/canary\.[[:digit:]]/canary.${commitNumberAfterTag}-${sha}/g")
+          newVersion=$(echo ${currentVersion} | sed -e "s/${inputs.env}\.[[:digit:]]/${inputs.env}.${commitNumberAfterTag}-${sha}/g")
           echo "New version ${newVersion}"
           sed -iE "s/${currentVersion}/${newVersion}/g" package.json
           sed -iE "s/${currentVersion}/${newVersion}/g" CHANGELOG.md
@@ -170,7 +170,7 @@ jobs:
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm publish .
           else
-            npm publish . --tag canary
+            npm publish . --tag "${{ inputs.env }}"
           fi
           rm -rf .npmrc
         env:

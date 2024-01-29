@@ -33,7 +33,7 @@ on:
         required: true
         type: string
       stage:
-        description: "build for specific type - example: 'canary/beta/latest'"
+        description: "build for specific type - example: 'patch/canary/beta/latest'"
         required: false
         type: string
       schema-type:
@@ -111,6 +111,7 @@ jobs:
       enabled-openssl-legacy-provider: ${{ inputs.enabled-openssl-legacy-provider }}
       os: ${{ inputs.os }}
       node-version: ${{ inputs.node-version }}
+      stage: ${{ inputs.stage }}
   upload-to-s3:
     if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
     needs: upload-packages-to-npm

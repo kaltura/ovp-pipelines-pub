@@ -26,12 +26,16 @@ on:
         description: "which node version to use - example: '17.x/18.x'"
         required: false
         type: string
-        default: '17.x'        
+        default: '17.x'
+      stage:
+        description: "build for specific type - example: 'patch/canary/beta/latest'"
+        required: false
+        type: string
       os:
         description: "which ubuntu version to use - example: 'ubuntu-latest'"
         required: false
         type: string
-        default: 'ubuntu-latest'  
+        default: 'ubuntu-latest'
     outputs:
       name:
         description: "name"
@@ -122,6 +126,8 @@ jobs:
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
             yarn run release
+          elif [ "${{ inputs.stage }}" = "patch" ]; then
+            yarn run release --prerelease patch --skip.commit=true --skip.tag=true
           else
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
@@ -133,6 +139,8 @@ jobs:
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
             yarn run release
+          elif [ "${{ inputs.stage }}" = "patch" ]; then
+            yarn run release --prerelease patch --skip.commit=true --skip.tag=true
           else
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
@@ -142,7 +150,12 @@ jobs:
           sha=$(echo "${GITHUB_SHA::7}")
           currentVersion=$(npx -c 'echo "$npm_package_version"')
           commitNumberAfterTag=$(git rev-list  `git rev-list --tags --no-walk --max-count=1`..HEAD --count)
-          newVersion=$(echo ${currentVersion} | sed -e "s/canary\.[[:digit:]]/canary.${commitNumberAfterTag}-${sha}/g")
+          if [ "${{ inputs.stage }}" = "patch" ]; then
+            stage="patch"
+          else
+            stage="canary"
+          fi
+          newVersion=$(echo ${currentVersion} | sed -e "s/${stage}\.[[:digit:]]/${stage}.${commitNumberAfterTag}-${sha}/g")
           echo "New version ${newVersion}"
           sed -iE "s/${currentVersion}/${newVersion}/g" package.json
           sed -iE "s/${currentVersion}/${newVersion}/g" CHANGELOG.md
@@ -169,6 +182,8 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm publish .
+          elif [ "${{ inputs.stage }}" = "patch" ]; then
+            npm publish . --tag patch
           else
             npm publish . --tag canary
           fi

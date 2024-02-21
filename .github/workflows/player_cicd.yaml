@@ -114,14 +114,14 @@ jobs:
   debug-upload-to-s3:
     steps:
       - name: Check secret
-          secrets:
-            PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
-            PLAYER_S3_BUCKET_APPS: ${{ secrets.PLAYER_S3_BUCKET_APPS }}
-          run: |
-            echo "player_central_account_id"
-            echo ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
-            echo "player_s3_bucket_apps"
-            echo ${{ secrets.PLAYER_S3_BUCKET_APPS }}
+        secrets:
+          PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+          PLAYER_S3_BUCKET_APPS: ${{ secrets.PLAYER_S3_BUCKET_APPS }}
+        run: |
+          echo "player_central_account_id"
+          echo ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
+          echo "player_s3_bucket_apps"
+          echo ${{ secrets.PLAYER_S3_BUCKET_APPS }}
   upload-to-s3:
     if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
     needs: upload-packages-to-npm

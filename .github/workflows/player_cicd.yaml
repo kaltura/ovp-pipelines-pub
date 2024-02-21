@@ -112,9 +112,11 @@ jobs:
       os: ${{ inputs.os }}
       node-version: ${{ inputs.node-version }}
   debug-upload-to-s3:
+    runs-on: ubuntu-latest
     steps:
-      - name: Check secret
-        secrets:
+      - name: Checking secret
+        id: checking-secret
+        env:
           PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
           PLAYER_S3_BUCKET_APPS: ${{ secrets.PLAYER_S3_BUCKET_APPS }}
         run: |

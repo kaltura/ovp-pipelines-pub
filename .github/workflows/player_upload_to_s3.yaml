@@ -126,6 +126,17 @@ jobs:
       - name: Upload plugin to s3 apps
         if: ${{ inputs.type == 'plugin' }}
         run: |
+          #Debug Vars
+          echo "role-arn=arn:aws:iam::${{ steps.account_id.outputs.account_id }}:role/${{ matrix.env }}-kalt-ovp-apps-role"
+          echo "role-session-name=${{ matrix.env }}-${{ github.run_id }}"
+          echo "region=${{ steps.region.outputs.region }}"
+          echo "Query:"
+          echo "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]"
+          echo "s3Path=s3://${{ matrix.env }}-${{ secrets.PLAYER_S3_BUCKET_APPS }}/bundler/playkit/modules/${{ inputs.name }}/${{ inputs.version }}"
+          echo "cp command s3Path package/dist/ ${s3Path}/"
+          echo "cp command inputs.name ${{ inputs.name }}.js*"
+
+          
           # Assume role
           export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
                       $(aws sts assume-role \

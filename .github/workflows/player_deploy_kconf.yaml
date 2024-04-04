@@ -95,7 +95,7 @@ jobs:
               exit 1
           fi
 
-          aws ssm put-parameter --name "/player/versions/uiconf/${STAGE}"" --value "${NEW_VERSION}"" --overwrite --region eu-central-1
+          aws ssm put-parameter --name "/player/versions/uiconf/${STAGE}" --value "${NEW_VERSION}" --overwrite --region eu-central-1
 
           echo "new version is: ${NEW_VERSION}"
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT

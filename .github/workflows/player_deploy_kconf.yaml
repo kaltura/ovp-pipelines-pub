@@ -59,6 +59,9 @@ jobs:
           NEW_VERSION=""
           MAX_MINOR_VERSION=999
 
+          echo "Canary Version: ${CANARY_VERSION}"
+          echo "Latest Version: ${LATEST_VERSION}"
+
           MAJOR_VERSION=$(echo $LATEST_VERSION | cut -d. -f1)
           MINOR_VERSION=$(echo $LATEST_VERSION | cut -d. -f2)
           PATCH_VERSION=$(echo $CANARY_VERSION | cut -d. -f3)

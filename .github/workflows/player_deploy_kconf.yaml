@@ -54,37 +54,55 @@ jobs:
       - name: Get Product Version
         id: get-product-version
         run: |
-          function increment_version() {
-            echo "$1" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}'
-          }
+          CANARY_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/canary --region eu-central-1 | jq -r .Parameters[].Value)
+          LATEST_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region eu-central-1 | jq -r .Parameters[].Value)
+          NEW_VERSION=""
+          MAX_MINOR_VERSION=999
 
-          if [[ ${STAGE} == "canary" ]]; then
-            echo "canary"
-            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --query 'Parameters[].Value' --output text)
-            if [[ ${oldVersion} == "NULL" ]]; then
-              oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
-              newVersion="${oldVersion}.001"
-            else
-              newVersion=$(increment_version "${oldVersion}")
-            fi
-          else
-            oldVersion=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --query 'Parameters[].Value' --output text)
-            if [[ -z ${PRODUCT_VERSION} ]] ; then
-              newVersion=$(increment_version "${oldVersion}")
-            else
-              newVersion=${PRODUCT_VERSION}
-            fi
+          echo "Canary Version: ${CANARY_VERSION}"
+          echo "Latest Version: ${LATEST_VERSION}"
 
-            if [[ ${STAGE} == "latest" ]]; then
-              echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary = NULL"
-              aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --type String --overwrite
-            fi
+          MAJOR_VERSION=$(echo $LATEST_VERSION | cut -d. -f1)
+          MINOR_VERSION=$(echo $LATEST_VERSION | cut -d. -f2)
+          PATCH_VERSION=$(echo $CANARY_VERSION | cut -d. -f3)
+
+          if [[ $MAJOR_VERSION == "" || $MINOR_VERSION == "" ]]; then
+              echo "Could not determine major and minor version from $LATEST_VERSION"
+              exit 1
           fi
-          echo "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE} = ${newVersion}"
-          aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --value "${newVersion}" --type String --overwrite
-          
-          echo "new version is: ${newVersion}"
-          echo "version=${newVersion}" >> $GITHUB_OUTPUT
+
+          if [[ $STAGE == "canary" ]]; then
+              if [[ $PATCH_VERSION == "NULL" ]]; then
+                  NEW_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.001"
+              else
+                  INCREMENTED_PATCH_VERSION=$(printf "%03d" $((10#$PATCH_VERSION + 1)))
+                  NEW_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${INCREMENTED_PATCH_VERSION}"
+              fi
+          fi
+
+          if [[ $STAGE == "latest" ]]; then
+              INCREMENTED_MINOR_VERSION=$(printf "%d" $((10#$MINOR_VERSION + 1)))
+              if [[ $INCREMENTED_MINOR_VERSION -gt $MAX_MINOR_VERSION ]]; then
+                  INCREMENTED_MINOR_VERSION="0"
+                  MAJOR_VERSION=$((10#$MAJOR_VERSION + 1))
+              fi
+              NEW_VERSION="${MAJOR_VERSION}.${INCREMENTED_MINOR_VERSION}"
+          fi
+
+          if [[ $PRODUCT_VERSION != "" ]]; then
+              NEW_VERSION=$PRODUCT_VERSION
+          fi
+
+          if [[ $NEW_VERSION == "" ]]; then
+              echo "Could not determine new version"
+              exit 1
+          fi
+
+          aws ssm put-parameter --name "/player/versions/uiconf/${STAGE}" --value "${NEW_VERSION}" --overwrite --region eu-central-1
+
+          echo "new version is: ${NEW_VERSION}"
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Get Parameters
         id: get-params
         run: |

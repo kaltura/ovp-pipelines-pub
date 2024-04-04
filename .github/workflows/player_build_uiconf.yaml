@@ -44,6 +44,9 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       file-name: ${{ steps.file_name.outputs.file_name }}
+    env:
+      STAGE: ${{ inputs.stage }}
+      PRODUCT_VERSION: ${{ inputs.uiconf-new-version }}
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -64,31 +67,55 @@ jobs:
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
 
-          if [ "${{ inputs.stage }}" = "canary" ]; then
-            oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/canary --region us-east-1 | jq -r .Parameters[].Value)
-            if [ "${oldVersion}" = "NULL" ]; then
-              oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
-              newVersion="${oldVersion}.001"
-            else
-              newVersion=$(echo "${oldVersion}" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}')
-            fi
-          else
-            oldVersion=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
-            if [ -z "${{ inputs.uiconf-new-version }}" ] ; then
-              newVersion=$(echo "${oldVersion}" | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}')
-            else
-              newVersion=${{ inputs.uiconf-new-version }}
-            fi
+          CANARY_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/canary --region us-east-1 | jq -r .Parameters[].Value)
+          LATEST_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
 
-            if [ "${{ inputs.stage }}" = "latest" ]; then
-              aws ssm put-parameter --name /player/versions/uiconf/canary --value "NULL" --overwrite --region us-east-1
-            fi
+          echo "Canary Version: ${CANARY_VERSION}"
+          echo "Latest Version: ${LATEST_VERSION}"
+
+          NEW_VERSION=""
+          MAX_MINOR_VERSION=999
+
+          MAJOR_VERSION=$(echo $LATEST_VERSION | cut -d. -f1)
+          MINOR_VERSION=$(echo $LATEST_VERSION | cut -d. -f2)
+          PATCH_VERSION=$(echo $CANARY_VERSION | cut -d. -f3)
+
+          if [[ $MAJOR_VERSION == "" || $MINOR_VERSION == "" ]]; then
+              echo "Could not determine major and minor version from $LATEST_VERSION"
+              exit 1
           fi
 
-          aws ssm put-parameter --name /player/versions/uiconf/${{ inputs.stage }} --value ${newVersion} --overwrite --region us-east-1
+          if [[ $STAGE == "canary" ]]; then
+              if [[ $PATCH_VERSION == "NULL" ]]; then
+                  NEW_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.001"
+              else
+                  INCREMENTED_PATCH_VERSION=$(printf "%03d" $((10#$PATCH_VERSION + 1)))
+                  NEW_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${INCREMENTED_PATCH_VERSION}"
+              fi
+          fi
 
-          echo "new version is: ${newVersion}"
-          echo "version=${newVersion}" >> $GITHUB_OUTPUT
+          if [[ $STAGE == "latest" ]]; then
+              INCREMENTED_MINOR_VERSION=$(printf "%d" $((10#$MINOR_VERSION + 1)))
+              if [[ $INCREMENTED_MINOR_VERSION -gt $MAX_MINOR_VERSION ]]; then
+                  INCREMENTED_MINOR_VERSION="0"
+                  MAJOR_VERSION=$((10#$MAJOR_VERSION + 1))
+              fi
+              NEW_VERSION="${MAJOR_VERSION}.${INCREMENTED_MINOR_VERSION}"
+          fi
+
+          if [[ $PRODUCT_VERSION != "" ]]; then
+              NEW_VERSION=$PRODUCT_VERSION
+          fi
+
+          if [[ $NEW_VERSION == "" ]]; then
+              echo "Could not determine new version"
+              exit 1
+          fi
+
+          aws ssm put-parameter --name "/player/versions/uiconf/${STAGE}" --value "${NEW_VERSION}" --overwrite --region us-east-1
+
+          echo "New Version: ${NEW_VERSION}"
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build uiconf for ${{ inputs.stage }} on schema-type ${{ inputs.schema-type }}
         run: |

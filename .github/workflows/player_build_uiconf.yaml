@@ -68,6 +68,10 @@ jobs:
 
           CANARY_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/canary --region us-east-1 | jq -r .Parameters[].Value)
           LATEST_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region us-east-1 | jq -r .Parameters[].Value)
+
+          echo "Canary Version: ${CANARY_VERSION}"
+          echo "Latest Version: ${LATEST_VERSION}"
+
           NEW_VERSION=""
           MAX_MINOR_VERSION=999
 

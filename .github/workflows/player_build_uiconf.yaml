@@ -59,6 +59,15 @@ jobs:
       - name: Increase version and update ssm param
         id: version
         run: |
+          # Assume role
+          export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+                      $(aws sts assume-role \
+                      --role-arn arn:aws:iam::${{ secrets.PLAYER_SERVICES_ACCOUNT_ID }}:role/nvp1-deployment-role \
+                      --role-session-name "nvp1-${{ github.run_id }}" \
+                      --region "us-east-1" \
+                      --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+                      --output text))
+
           CANARY_VERSION=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --region us-east-1 | jq -r .Parameters[].Value)
           LATEST_VERSION=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --region us-east-1 | jq -r .Parameters[].Value)
           NEW_VERSION=""

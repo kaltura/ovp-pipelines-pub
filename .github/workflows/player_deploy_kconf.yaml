@@ -54,8 +54,8 @@ jobs:
       - name: Get Product Version
         id: get-product-version
         run: |
-          CANARY_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/canary --region eu-central-1 | jq -r .Parameters[].Value)
-          LATEST_VERSION=$(aws ssm get-parameters --names /player/versions/uiconf/latest --region eu-central-1 | jq -r .Parameters[].Value)
+          CANARY_VERSION=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --region eu-central-1 | jq -r .Parameters[].Value)
+          LATEST_VERSION=$(aws ssm get-parameters --names "${PRODUCT_VERSION_PARAM_BASE_NAME}/latest" --region eu-central-1 | jq -r .Parameters[].Value)
           NEW_VERSION=""
           MAX_MINOR_VERSION=999
 
@@ -78,15 +78,16 @@ jobs:
                   INCREMENTED_PATCH_VERSION=$(printf "%03d" $((10#$PATCH_VERSION + 1)))
                   NEW_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${INCREMENTED_PATCH_VERSION}"
               fi
-          fi
-
-          if [[ $STAGE == "latest" ]]; then
+          else
               INCREMENTED_MINOR_VERSION=$(printf "%d" $((10#$MINOR_VERSION + 1)))
               if [[ $INCREMENTED_MINOR_VERSION -gt $MAX_MINOR_VERSION ]]; then
                   INCREMENTED_MINOR_VERSION="0"
                   MAJOR_VERSION=$((10#$MAJOR_VERSION + 1))
               fi
               NEW_VERSION="${MAJOR_VERSION}.${INCREMENTED_MINOR_VERSION}"
+              if [[ $STAGE == "latest" ]]; then
+                  aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/canary" --value "NULL" --overwrite --region eu-central-1
+              fi
           fi
 
           if [[ $PRODUCT_VERSION != "" ]]; then
@@ -98,7 +99,7 @@ jobs:
               exit 1
           fi
 
-          aws ssm put-parameter --name "/player/versions/uiconf/${STAGE}" --value "${NEW_VERSION}" --overwrite --region eu-central-1
+          aws ssm put-parameter --name "${PRODUCT_VERSION_PARAM_BASE_NAME}/${STAGE}" --value "${NEW_VERSION}" --overwrite --region eu-central-1
 
           echo "new version is: ${NEW_VERSION}"
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT

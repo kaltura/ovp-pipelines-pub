@@ -133,17 +133,23 @@ jobs:
                       --role-session-name "${{ matrix.env }}-${{ github.run_id }}" \
                       --region ${{ steps.region.outputs.region }} \
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
-                      --output text))
+                      --output text)) 
 
           s3Path="s3://${{ matrix.env }}-${{ secrets.PLAYER_S3_BUCKET_APPS }}/bundler/playkit/modules/${{ inputs.name }}/${{ inputs.version }}"
-          aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "${{ inputs.name }}.js*"
-          aws s3 ls ${s3Path}/
+          aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "${{ inputs.name }}.js*" 2>&1 | tee output.log
+          aws s3 ls ${s3Path}/ 2>&1 | tee output.log
           if [ -d 'package/translations' ]; then
-            aws s3 cp package/translations/ ${s3Path}/translations/ --recursive --include "*"
-            aws s3 ls ${s3Path}/translations/
+            aws s3 cp package/translations/ ${s3Path}/translations/ --recursive --include "*" 2>&1 | tee output.log
+            aws s3 ls ${s3Path}/translations/ 2>&1 | tee output.log
           fi
-          jq '{version} + .kaltura' < package/package.json > package/manifest.json
-          aws s3 cp package/manifest.json ${s3Path}/manifest.json
+          jq '{version} + .kaltura' < package/package.json > package/manifest.json 2>&1 | tee output.log
+          aws s3 cp package/manifest.json ${s3Path}/manifest.json 2>&1 | tee output.log
+
+      - name: Persist logs
+        if: ${{ failure() }}
+        run: |
+          cat output.log
+        shell: bash
 
       - name: Upload player to s3 apps
         if: ${{ inputs.type == 'player' }}

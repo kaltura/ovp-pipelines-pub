@@ -200,27 +200,31 @@ jobs:
               VERSION=$(echo "${PARAMS}" | jq -r ".\"${PLAYKIT}\"")
               PLAYKIT_VERSION_PATH="${PLAYKIT_VERSION_SCHEMA_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}.${NAME}"
               CURRENT_VERSION=$(yq "${PLAYKIT_VERSION_PATH}" "${ENV}" -r)
-          
+
               if [[ ${VERSION} == "${CURRENT_VERSION}" ]]; then
                 continue
               fi
-          
+
               yq "${PLAYKIT_VERSION_PATH} = \"${VERSION}\"" "${ENV}" -i
               if [[ $? -ne 0 ]]; then
                 echo "Failed to update ${ENV} with ${PLAYKIT_VERSION_PATH} = ${VERSION}"
                 exit 1
               fi
+              if [[ ${STAGE} == "latest" ]]; then
+                PLAYKIT_PREVIOUS_VERSION_PATH="${PLAYKIT_VERSION_SCHEMA_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}_prev.${NAME}"
+                yq "${PLAYKIT_PREVIOUS_VERSION_PATH} = \"${CURRENT_VERSION}\"" "${ENV}" -i
+              fi
               echo "Updated: ${NAME} = \"${VERSION}\""
             done
 
             PRODUCT_VERSION_PATH="${PRODUCT_VERSION_YAML_BASE_NAME}.${SCHEMA_TYPE}.${STAGE}"
-          
+
             yq "${PRODUCT_VERSION_PATH} = \"${PRODUCT_VERSION}\"" "${ENV}" -i
             if [[ $? -ne 0 ]]; then
               echo "Failed to update ${ENV} with ${PRODUCT_VERSION_PATH} = ${PRODUCT_VERSION}"
               exit 1
             fi
-          
+
             NEW_PRODUCT_VERSION=$(yq "${PRODUCT_VERSION_PATH}" "${ENV}" -r)
             echo "Successfully deployed new product version: ${NEW_PRODUCT_VERSION}"
           done

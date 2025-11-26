@@ -101,6 +101,14 @@ jobs:
         run: |
           sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
           rm package.json.bak
+      - name: Remove .npmrc
+        run: |
+          if [ -f .npmrc ]; then
+            echo "Removing .npmrc..."
+            rm .npmrc
+          else
+            echo ".npmrc not found, skipping."
+          fi
       - name: Yarn install
         run: yarn install
       - name: Yarn run ${{ inputs.yarn-run-to-execute }} with NODE_OPTIONS

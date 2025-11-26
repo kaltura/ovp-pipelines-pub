@@ -52,7 +52,7 @@ jobs:
             "matrix=[]" >> $GITHUB_OUTPUT
           fi
 
-  preinstall:
+  prepare:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -67,9 +67,14 @@ jobs:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Remove temporary .npmrc
         run: rm -f .npmrc
+      - name: Disable preinstall
+        working-directory: ${{ github.workspace }}
+        run: |
+          sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
+          rm package.json.bak
   
   running-tests:
-    needs: [set-matrix, preinstall]
+    needs: [set-matrix, prepare]
     strategy:
       matrix:
         os: ${{ fromJSON(needs.set-matrix.outputs.matrix) }}

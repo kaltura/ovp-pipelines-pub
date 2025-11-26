@@ -52,8 +52,24 @@ jobs:
             "matrix=[]" >> $GITHUB_OUTPUT
           fi
 
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Create temporary .npmrc
+        run: |
+          echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
+      - name: Preinstall
+        run: npx --yes --prefer-online --registry=https://npm.pkg.github.com --package @kaltura/kaltura-tools@latest kaltura-tools check --root=.
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove temporary .npmrc
+        run: rm -f .npmrc
+  
   running-tests:
-    needs: set-matrix
+    needs: [set-matrix, prepare]
     strategy:
       matrix:
         os: ${{ fromJSON(needs.set-matrix.outputs.matrix) }}
@@ -80,6 +96,19 @@ jobs:
           for command in ${{ inputs.yarn-upgrade-list }}; do
             yarn upgrade $command
           done
+      - name: Disable preinstall
+        working-directory: ${{ github.workspace }}
+        run: |
+          sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
+          rm package.json.bak
+      - name: Remove .npmrc
+        run: |
+          if [ -f .npmrc ]; then
+            echo "Removing .npmrc..."
+            rm .npmrc
+          else
+            echo ".npmrc not found, skipping."
+          fi
       - name: Yarn install
         run: yarn install
       - name: Yarn run ${{ inputs.yarn-run-to-execute }} with NODE_OPTIONS

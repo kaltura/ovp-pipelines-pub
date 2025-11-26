@@ -80,6 +80,10 @@ jobs:
           for command in ${{ inputs.yarn-upgrade-list }}; do
             yarn upgrade $command
           done
+      - name: Run Kaltura Tools Check
+        uses: kaltura/kaltura-tools@main
+        with:
+          repo-path: '${{ github.workspace }}'
       - name: Yarn install
         run: yarn install
       - name: Yarn run ${{ inputs.yarn-run-to-execute }} with NODE_OPTIONS

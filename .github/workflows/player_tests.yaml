@@ -55,8 +55,6 @@ jobs:
   preinstall:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Create temporary .npmrc
         run: |
           echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc

@@ -153,6 +153,7 @@ jobs:
           fi
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Yarn run release without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
@@ -164,6 +165,8 @@ jobs:
           else
             yarn run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update version in package.json file
         run: |

@@ -134,10 +134,10 @@ jobs:
       #     sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
       #     rm package.json.bak
       
-      # - name: Yarn install
-      #   run: yarn install
-      #   env:
-      #     GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Yarn install
+        run: yarn install
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Yarn run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}

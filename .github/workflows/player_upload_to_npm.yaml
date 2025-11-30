@@ -118,28 +118,26 @@ jobs:
             done
           fi
 
-      - name: Create temporary .npmrc
-        run: |
-          echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
+      # - name: Create temporary .npmrc
+      #   run: |
+      #     echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
+      #     echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
       # - name: Preinstall
       #   run: npx --yes --prefer-online --registry=https://npm.pkg.github.com --package @kaltura/kaltura-tools@latest kaltura-tools check --root=.
-
+      #   env:
+      #     GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # - name: Remove temporary .npmrc
       #   run: rm -f .npmrc
+      # - name: Disable preinstall
+      #   working-directory: ${{ github.workspace }}
+      #   run: |
+      #     sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
+      #     rm package.json.bak
       
-      - name: Yarn install
-        run: yarn install
-        env:
-          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Remove temporary .npmrc
-        run: rm -f .npmrc
-
-      - name: Recreate original .npmrc
-        run: |
-          echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
+      # - name: Yarn install
+      #   run: yarn install
+      #   env:
+      #     GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Yarn run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
@@ -167,6 +165,12 @@ jobs:
           fi
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Disable preinstall
+        working-directory: ${{ github.workspace }}
+        run: |
+          sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
+          rm package.json.bak
 
       - name: Update version in package.json file
         run: |
@@ -198,6 +202,8 @@ jobs:
         run: |
           yarn run build
           ls -la dist/
+
+      # TODO revert package.json scripts ???
 
       # - name: Npm publish
       #   run: |

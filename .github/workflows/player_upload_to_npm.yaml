@@ -139,11 +139,14 @@ jobs:
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable preinstall
-        working-directory: ${{ github.workspace }}
-        run: |
-          sed -i.bak 's/"disabled-preinstall":/"preinstall":/' package.json
-          rm package.json.bak
+      - name: Remove temporary .npmrc
+        run: rm -f .npmrc 
+
+      # - name: Enable preinstall
+      #   working-directory: ${{ github.workspace }}
+      #   run: |
+      #     sed -i.bak 's/"disabled-preinstall":/"preinstall":/' package.json
+      #     rm package.json.bak
 
       - name: Yarn run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}

@@ -134,7 +134,7 @@ jobs:
                       --region ${{ steps.region.outputs.region }} \
                       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                       --output text))
-
+          aws sts get-caller-identity
           s3Path="s3://${{ matrix.env }}-${{ secrets.PLAYER_S3_BUCKET_APPS }}/bundler/playkit/modules/${{ inputs.name }}/${{ inputs.version }}"
           aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "${{ inputs.name }}.js*"
           aws s3 ls ${s3Path}/

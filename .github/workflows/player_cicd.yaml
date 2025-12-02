@@ -115,7 +115,7 @@ jobs:
   upload-to-s3:
     if: (always() && needs.upload-packages-to-npm.result == 'success' && inputs.type != 'dependency')
     needs: upload-packages-to-npm
-    uses: ./.github/workflows/player_upload_to_s3.yaml
+    uses: kaltura/ovp-pipelines-pub/.github/workflows/player_upload_to_s3.yaml@ido123ziv-patch-1
     secrets:
       PLAYER_CENTRAL_ACCOUNT_ID: ${{ secrets.PLAYER_CENTRAL_ACCOUNT_ID }}
       PLAYER_S3_BUCKET_APPS: ${{ secrets.PLAYER_S3_BUCKET_APPS }}

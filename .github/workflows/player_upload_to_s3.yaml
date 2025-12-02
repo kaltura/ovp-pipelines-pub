@@ -139,7 +139,7 @@ jobs:
           echo "pappi: ${s3Path}"
           echo ls package/dist/ && ls package/dist/ 
           aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "${{ inputs.name }}.js*" && echo "we did it" || echo "cp failed"
-          aws s3 ls ${s3Path}/
+          aws s3 ls ${s3Path}/ && echo "listed bucket" || echo "can not list bucket"
           if [ -d 'package/translations' ]; then
             aws s3 cp package/translations/ ${s3Path}/translations/ --recursive --include "*"
             aws s3 ls ${s3Path}/translations/

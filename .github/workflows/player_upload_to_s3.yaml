@@ -137,6 +137,7 @@ jobs:
           aws sts get-caller-identity
           s3Path="s3://${{ matrix.env }}-${{ secrets.PLAYER_S3_BUCKET_APPS }}/bundler/playkit/modules/${{ inputs.name }}/${{ inputs.version }}"
           echo "pappi: ${s3Path}"
+          echo ls package/dist/ && ls package/dist/ 
           aws s3 cp package/dist/ ${s3Path}/ --recursive --exclude "*" --include "${{ inputs.name }}.js*" && echo "we did it" || echo "cp failed"
           aws s3 ls ${s3Path}/
           if [ -d 'package/translations' ]; then

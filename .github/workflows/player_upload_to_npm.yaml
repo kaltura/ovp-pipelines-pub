@@ -117,22 +117,6 @@ jobs:
               yarn add $package --exact
             done
           fi
-
-      # - name: Create temporary .npmrc
-      #   run: |
-      #     echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
-      #     echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
-      # - name: Preinstall
-      #   run: npx --yes --prefer-online --registry=https://npm.pkg.github.com --package @kaltura/kaltura-tools@latest kaltura-tools check --root=.
-      #   env:
-      #     GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Remove temporary .npmrc
-      #   run: rm -f .npmrc
-      # - name: Disable preinstall
-      #   working-directory: ${{ github.workspace }}
-      #   run: |
-      #     sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
-      #     rm package.json.bak
       
       - name: Yarn install
         run: yarn install
@@ -141,12 +125,6 @@ jobs:
 
       - name: Remove temporary .npmrc
         run: rm -f .npmrc 
-
-      # - name: Enable preinstall
-      #   working-directory: ${{ github.workspace }}
-      #   run: |
-      #     sed -i.bak 's/"disabled-preinstall":/"preinstall":/' package.json
-      #     rm package.json.bak
 
       - name: Yarn run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}

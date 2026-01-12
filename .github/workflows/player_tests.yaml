@@ -31,7 +31,7 @@ on:
         description: "which node version to use - example: '17.x/18.x'"
         required: false
         type: string
-        default: '17.x'        
+        default: '17.x'
 
 jobs:
   set-matrix:
@@ -67,7 +67,7 @@ jobs:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Remove temporary .npmrc
         run: rm -f .npmrc
-  
+
   running-tests:
     needs: [set-matrix, prepare]
     strategy:
@@ -76,13 +76,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Node.js version ${{ inputs.node-version }}
+        uses: actions/checkout@v4
+      - name: Node.js version from .nvmrc
         uses: Wandalen/wretry.action@v1.0.36
         with:
-          action: actions/setup-node@v3
+          action: actions/setup-node@v4
           with: |
-            node-version: ${{ inputs.node-version }}
+            node-version-file: '.nvmrc'
           attempt_limit: 3
           attempt_delay: 2000
       - name: Setup Chrome
@@ -109,8 +109,18 @@ jobs:
           else
             echo ".npmrc not found, skipping."
           fi
+      - name: Setup JFrog
+        uses: jfrog/setup-jfrog-cli@v4
+        id: setup-jfrog
+        env:
+          JF_URL: https://kalturaa.jfrog.io
+        with:
+          oidc-provider-name: ovp-github-oidc
       - name: Yarn install
         run: yarn install
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
       - name: Yarn run ${{ inputs.yarn-run-to-execute }} with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |

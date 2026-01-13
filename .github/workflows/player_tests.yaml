@@ -112,7 +112,7 @@ jobs:
           JF_URL: https://kalturaa.jfrog.io
         with:
           oidc-provider-name: ovp-github-oidc
-      - name: NPM install
+      - name: NPM install --verbose
         run: npm install
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}

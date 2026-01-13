@@ -97,11 +97,6 @@ jobs:
             # Using npm install with a specific version/tag is equivalent to yarn upgrade for a targeted package
             npm install $command --save
           done
-      - name: Disable preinstall
-        working-directory: ${{ github.workspace }}
-        run: |
-          sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
-          rm package.json.bak
       - name: Remove .npmrc
         run: |
           if [ -f .npmrc ]; then

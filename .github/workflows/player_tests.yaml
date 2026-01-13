@@ -4,11 +4,11 @@ run-name: Player And Plugin Tests
 on:
   workflow_call:
     inputs:
-      yarn-upgrade-list:
+      npm-install-list:
         description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
         required: false
         type: string
-      yarn-run-to-execute:
+      npm-run-to-execute:
         description: "list of package.json scripts - example: 'eslint flow test'"
         required: true
         type: string
@@ -77,12 +77,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Node.js version from .nvmrc
+      - name: Node.js version ${{ inputs.node-version }}
         uses: Wandalen/wretry.action@v1.0.36
         with:
           action: actions/setup-node@v4
           with: |
-            node-version-file: '.nvmrc'
+            node-version: ${{ inputs.node-version }}
           attempt_limit: 3
           attempt_delay: 2000
       - name: Setup Chrome
@@ -90,11 +90,12 @@ jobs:
       - name: Setup Firefox
         if: matrix.os == 'ubuntu-latest'
         uses: browser-actions/setup-firefox@v1
-      - name: Yarn upgrade ${{ inputs.yarn-upgrade-list }}
-        if: ${{ inputs.yarn-upgrade-list }}
+      - name: NPM update/install ${{ inputs.npm-install-list }}
+        if: ${{ inputs.npm-install-list }}
         run: |
-          for command in ${{ inputs.yarn-upgrade-list }}; do
-            yarn upgrade $command
+          for command in ${{ inputs.npm-install-list }}; do
+            # Using npm install with a specific version/tag is equivalent to yarn upgrade for a targeted package
+            npm install $command --save
           done
       - name: Disable preinstall
         working-directory: ${{ github.workspace }}
@@ -116,22 +117,22 @@ jobs:
           JF_URL: https://kalturaa.jfrog.io
         with:
           oidc-provider-name: ovp-github-oidc
-      - name: Yarn install
-        run: yarn install
+      - name: NPM install
+        run: npm install
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
-      - name: Yarn run ${{ inputs.yarn-run-to-execute }} with NODE_OPTIONS
+      - name: NPM run ${{ inputs.npm-run-to-execute }} with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
-          for command in ${{ inputs.yarn-run-to-execute }}; do
-            yarn run $command
+          for command in ${{ inputs.npm-run-to-execute }}; do
+            npm run $command
           done
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
-      - name: Yarn run ${{ inputs.yarn-run-to-execute }} without NODE_OPTIONS
+      - name: NPM run ${{ inputs.npm-run-to-execute }} without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
-          for command in ${{ inputs.yarn-run-to-execute }}; do
-            yarn run $command
+          for command in ${{ inputs.npm-run-to-execute }}; do
+            npm run $command
           done

@@ -56,13 +56,13 @@ jobs:
       full-npm-name: ${{ steps.full_npm_name.outputs.full_npm_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}
       - name: Node.js version ${{ inputs.node-version }}
         uses: Wandalen/wretry.action@v1.0.36
         with:
-          action: actions/setup-node@v3
+          action: actions/setup-node@v4
           with: |
             node-version: ${{ inputs.node-version }}
             always-auth: true
@@ -118,30 +118,27 @@ jobs:
             done
           fi
 
-      - name: Create temporary .npmrc
-        run: |
-          echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
+      # - name: Create temporary .npmrc
+      #   run: |
+      #     echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
+      #     echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
       - name: Preinstall
         run: npx --yes --prefer-online --registry=https://npm.pkg.github.com --package @kaltura/kaltura-tools@latest kaltura-tools check --root=.
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Remove temporary .npmrc
-        run: rm -f .npmrc
-      - name: Disable preinstall
-        working-directory: ${{ github.workspace }}
-        run: |
-          sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
-          rm package.json.bak
-      
-      - name: Yarn install
-        run: yarn install
 
-      - name: Yarn run release with NODE_OPTIONS
+      # - name: Remove temporary .npmrc
+      #   run: rm -f .npmrc
+      
+      - name: NPM install
+        run: npm install --verbose --force
+
+      # TODO replace yarn with npm ?
+      - name: NPM run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
-            yarn run release
+            npm run release
           elif [ "${{ inputs.stage }}" = "patch" ]; then
             yarn run release --prerelease patch --skip.commit=true --skip.tag=true
           else
@@ -192,22 +189,22 @@ jobs:
           yarn run build
           ls -la dist/
 
-      - name: Npm publish
-        run: |
-          npm set registry "https://registry.npmjs.org"
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
-          if [ "${{ inputs.env }}" = "prod" ]; then
-            npm publish .
-          elif [ "${{ inputs.stage }}" = "patch" ]; then
-            npm publish . --tag patch
-          else
-            npm publish . --tag canary
-          fi
-          rm -rf .npmrc
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
-          NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
+      # - name: Npm publish
+      #   run: |
+      #     npm set registry "https://registry.npmjs.org"
+      #     echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
+      #     if [ "${{ inputs.env }}" = "prod" ]; then
+      #       npm publish .
+      #     elif [ "${{ inputs.stage }}" = "patch" ]; then
+      #       npm publish . --tag patch
+      #     else
+      #       npm publish . --tag canary
+      #     fi
+      #     rm -rf .npmrc
+      #   env:
+      #     NPM_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
+      #     NODE_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
 
       - name: Yarn run pushTaggedRelease and create github release
         if: ${{ inputs.env == 'prod' }}

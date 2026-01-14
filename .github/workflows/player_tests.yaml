@@ -97,6 +97,10 @@ jobs:
             # Using npm install with a specific version/tag is equivalent to yarn upgrade for a targeted package
             npm install $command --save
           done
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+
       # - name: Remove .npmrc # TODO why is this needed ?
       #   run: |
       #     if [ -f .npmrc ]; then

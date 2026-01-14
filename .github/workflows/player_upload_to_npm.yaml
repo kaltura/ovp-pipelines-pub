@@ -118,6 +118,7 @@ jobs:
             done
           fi
 
+      # TODO remove or make it work with jfrog
       # - name: Create temporary .npmrc
       #   run: |
       #     echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
@@ -129,9 +130,20 @@ jobs:
 
       # - name: Remove temporary .npmrc
       #   run: rm -f .npmrc
+
+      - name: Setup JFrog
+        uses: jfrog/setup-jfrog-cli@v4
+        id: setup-jfrog
+        env:
+          JF_URL: https://kalturaa.jfrog.io
+        with:
+          oidc-provider-name: ovp-github-oidc
       
       - name: NPM install
         run: npm install --verbose --force
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
 
       # TODO replace yarn with npm ?
       - name: NPM run release with NODE_OPTIONS

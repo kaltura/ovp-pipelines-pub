@@ -117,7 +117,7 @@ jobs:
         with:
           oidc-provider-name: ovp-github-oidc
       - name: NPM install --verbose
-        run: npm install
+        run: npm install --force --verbose
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}

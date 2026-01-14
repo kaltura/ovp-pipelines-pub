@@ -129,9 +129,14 @@ jobs:
           done
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
       - name: NPM run ${{ inputs.npm-run-to-execute }} without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
           for command in ${{ inputs.npm-run-to-execute }}; do
             npm run $command
           done
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}

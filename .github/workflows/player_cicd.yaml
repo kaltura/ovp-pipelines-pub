@@ -94,7 +94,7 @@ jobs:
     needs: accept-prod
     uses: ./.github/workflows/player_tests.yaml
     with:
-      yarn-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
+      npm-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
       run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
       run-on-macos: ${{ inputs.run-on-macos }}
       node-version: ${{ inputs.node-version }}

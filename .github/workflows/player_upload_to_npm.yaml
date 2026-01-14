@@ -145,29 +145,28 @@ jobs:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
 
-      # TODO replace yarn with npm ?
       - name: NPM run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm run release
           elif [ "${{ inputs.stage }}" = "patch" ]; then
-            yarn run release --prerelease patch --skip.commit=true --skip.tag=true
+            npm run release --prerelease patch --skip.commit=true --skip.tag=true
           else
-            yarn run release --prerelease canary --skip.commit=true --skip.tag=true
+            npm run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
-      - name: Yarn run release without NODE_OPTIONS
+      - name: NPM run release without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
-            yarn run release
+            npm run release
           elif [ "${{ inputs.stage }}" = "patch" ]; then
-            yarn run release --prerelease patch --skip.commit=true --skip.tag=true
+            npm run release --prerelease patch --skip.commit=true --skip.tag=true
           else
-            yarn run release --prerelease canary --skip.commit=true --skip.tag=true
+            npm run release --prerelease canary --skip.commit=true --skip.tag=true
           fi
 
       - name: Update version in package.json file

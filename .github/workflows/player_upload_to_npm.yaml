@@ -186,19 +186,24 @@ jobs:
           rm package.jsonE
           rm CHANGELOG.mdE
 
-      - name: Yarn run build with NODE_OPTIONS
+      - name: NPM run build with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
-          yarn run build
+          npm run build
           ls -la dist/
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
 
-      - name: Yarn run build without NODE_OPTIONS
+      - name: NPM run build without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
-          yarn run build
+          npm run build
           ls -la dist/
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
 
       # - name: Npm publish
       #   run: |
@@ -217,6 +222,7 @@ jobs:
       #     NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
       #     NODE_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
 
+      # TODO
       - name: Yarn run pushTaggedRelease and create github release
         if: ${{ inputs.env == 'prod' }}
         run: |

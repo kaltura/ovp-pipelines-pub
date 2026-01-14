@@ -97,14 +97,14 @@ jobs:
             # Using npm install with a specific version/tag is equivalent to yarn upgrade for a targeted package
             npm install $command --save
           done
-      - name: Remove .npmrc
-        run: |
-          if [ -f .npmrc ]; then
-            echo "Removing .npmrc..."
-            rm .npmrc
-          else
-            echo ".npmrc not found, skipping."
-          fi
+      # - name: Remove .npmrc # TODO why is this needed ?
+      #   run: |
+      #     if [ -f .npmrc ]; then
+      #       echo "Removing .npmrc..."
+      #       rm .npmrc
+      #     else
+      #       echo ".npmrc not found, skipping."
+      #     fi
       - name: Setup JFrog
         uses: jfrog/setup-jfrog-cli@v4
         id: setup-jfrog

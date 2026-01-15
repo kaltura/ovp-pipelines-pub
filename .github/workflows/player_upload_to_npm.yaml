@@ -223,7 +223,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
 
-      # TODO
+      # TODO test prod
       - name: Yarn run pushTaggedRelease and create github release
         if: ${{ inputs.env == 'prod' }}
         run: |

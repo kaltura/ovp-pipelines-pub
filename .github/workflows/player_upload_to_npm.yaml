@@ -151,9 +151,9 @@ jobs:
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm run release
           elif [ "${{ inputs.stage }}" = "patch" ]; then
-            npm run release --prerelease patch --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease patch --skip.commit=true --skip.tag=true
           else
-            npm run release --prerelease canary --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease canary --skip.commit=true --skip.tag=true
           fi
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
@@ -164,9 +164,9 @@ jobs:
           if [ "${{ inputs.env }}" = "prod" ]; then
             npm run release
           elif [ "${{ inputs.stage }}" = "patch" ]; then
-            npm run release --prerelease patch --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease patch --skip.commit=true --skip.tag=true
           else
-            npm run release --prerelease canary --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease canary --skip.commit=true --skip.tag=true
           fi
 
       - name: Update version in package.json file

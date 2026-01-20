@@ -44,8 +44,7 @@ on:
         description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
         required: false
         type: string
-      # TODO maybe change to npm (and maybe not, because npm run and yarn run are different)
-      tests-yarn-run-to-execute:
+      tests-npm-run-to-execute:
         description: "list of package.json scripts - example: 'eslint flow test'"
         required: true
         type: string
@@ -94,7 +93,7 @@ jobs:
     needs: accept-prod
     uses: ./.github/workflows/player_tests.yaml
     with:
-      npm-run-to-execute: ${{ inputs.tests-yarn-run-to-execute }}
+      npm-run-to-execute: ${{ inputs.tests-npm-run-to-execute }}
       run-on-ubuntu: ${{ inputs.run-on-ubuntu }}
       run-on-macos: ${{ inputs.run-on-macos }}
       node-version: ${{ inputs.node-version }}

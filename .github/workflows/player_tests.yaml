@@ -4,10 +4,6 @@ run-name: Player And Plugin Tests
 on:
   workflow_call:
     inputs:
-      npm-install-list:
-        description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
-        required: false
-        type: string
       npm-run-to-execute:
         description: "list of package.json scripts - example: 'eslint flow test'"
         required: true
@@ -90,25 +86,6 @@ jobs:
       - name: Setup Firefox
         if: matrix.os == 'ubuntu-latest'
         uses: browser-actions/setup-firefox@v1
-      - name: NPM update/install ${{ inputs.npm-install-list }}
-        if: ${{ inputs.npm-install-list }}
-        run: |
-          for command in ${{ inputs.npm-install-list }}; do
-            # Using npm install with a specific version/tag is equivalent to yarn upgrade for a targeted package
-            npm install $command --save
-          done
-        env:
-          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
-
-      # - name: Remove .npmrc # TODO why is this needed ?
-      #   run: |
-      #     if [ -f .npmrc ]; then
-      #       echo "Removing .npmrc..."
-      #       rm .npmrc
-      #     else
-      #       echo ".npmrc not found, skipping."
-      #     fi
       - name: Setup JFrog
         uses: jfrog/setup-jfrog-cli@v4
         id: setup-jfrog
@@ -116,8 +93,8 @@ jobs:
           JF_URL: https://kalturaa.jfrog.io
         with:
           oidc-provider-name: ovp-github-oidc
-      - name: NPM install --verbose
-        run: npm install --force --verbose
+      - name: NPM ci
+        run: npm ci --verbose
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}

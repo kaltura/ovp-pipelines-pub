@@ -98,6 +98,7 @@ jobs:
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
       - name: NPM run ${{ inputs.npm-run-to-execute }} with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
@@ -108,6 +109,7 @@ jobs:
           NODE_OPTIONS: "--openssl-legacy-provider"
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
       - name: NPM run ${{ inputs.npm-run-to-execute }} without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
@@ -117,3 +119,4 @@ jobs:
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}

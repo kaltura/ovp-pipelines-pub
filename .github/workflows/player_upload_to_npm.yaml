@@ -89,6 +89,7 @@ jobs:
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
 
       - name: NPM run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}

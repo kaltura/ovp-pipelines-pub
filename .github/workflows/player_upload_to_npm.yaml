@@ -87,6 +87,7 @@ jobs:
       - name: NPM ci
         run: npm ci --verbose
         env:
+          TEST_VAR: ${{ steps.setup-jfrog.outputs.oidc-token }}
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
           KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}

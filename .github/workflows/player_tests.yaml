@@ -93,6 +93,15 @@ jobs:
           JF_URL: https://kalturaa.jfrog.io
         with:
           oidc-provider-name: ovp-github-oidc
+      - name: Debug env presence
+        run: |
+          echo "KALTURA_JFROG_TOKEN is set? ${{ env.KALTURA_JFROG_TOKEN != '' }}"
+          echo "KALT_REGISTRY_TOKEN is set? ${{ env.KALT_REGISTRY_TOKEN != '' }}"
+          echo "TEST_VAR is set? ${{ env.TEST_VAR != '' }}"
+        env:
+          TEST_VAR: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
       - name: NPM ci
         run: npm ci --verbose
         env:

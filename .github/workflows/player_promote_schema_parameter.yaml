@@ -15,6 +15,10 @@ on:
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
         required: true
         type: string
+      plugin-name:
+        description: "optional - plugin name to promote individually (for playerV3PartnersVersions) - example: 'playkit-youbora'"
+        required: false
+        type: string
     outputs:
       stage:
         description: "stage - example: 'beta/latest'"
@@ -36,6 +40,7 @@ jobs:
       PROMOTION_TYPE: ${{ inputs.promotion-type }}
       SCHEMA_TYPE: ${{ inputs.schema-type }}
       PARAM_BASE_NAME: /player/schema
+      PLUGIN_NAME: ${{ inputs.plugin-name }}
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v3
@@ -77,33 +82,43 @@ jobs:
         run: |
           PROMOTION_FROM=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f1)
           PROMOTION_TO=$(echo "${PROMOTION_TYPE}" | cut -d' ' -f3)
-          SOURCE_PARAMS=""
-          DEST_PARAMS=""
 
           echo "Promoting ${PROMOTION_FROM} to ${PROMOTION_TO}"
-          
-          SOURCE_PARAMS=$(aws ssm get-parameters-by-path --path "${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_FROM}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
-          SOURCE_PARAMS=$(echo "${SOURCE_PARAMS}" | jq 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
-          
-          DEST_PARAMS=$(aws ssm get-parameters-by-path --path "${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
-          DEST_PARAMS=$(echo "${DEST_PARAMS}" | jq 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
-          
-          for i in $(echo "${SOURCE_PARAMS}" | jq -r 'keys[]'); do
-              NAME=$(basename "${i}")
-              VERSION=$(echo "${SOURCE_PARAMS}" | jq -r ".\"${i}\"")
-              CURRENT_VERSION=$(echo "${DEST_PARAMS}" | jq -r ".\"${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}/${NAME}\"")
-              DESTINATION_PARAM_NAME="${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}/${NAME}"
-          
-              #CURRENT_PARAM=$(aws ssm get-parameter --name "${DESTINATION_PARAM_NAME}" --with-decryption --query Parameter.Value --output text 2>&1)
-              if [[ ${CURRENT_VERSION} == "null" ]]; then
-                  RESULT=$(aws ssm put-parameter --name "${DESTINATION_PARAM_NAME}" --value "${VERSION}" --type String --overwrite)
-                  echo "Created ${DESTINATION_PARAM_NAME} with value ${VERSION}"
-              else
-                  if [[ ${CURRENT_VERSION} == "${VERSION}" ]]; then
-                      echo "No updates for: ${NAME}"
-                      continue
-                  fi
-                  RESULT=$(aws ssm put-parameter --name "${DESTINATION_PARAM_NAME}" --value "${VERSION}" --type String --overwrite)
-                  echo "Updated ${DESTINATION_PARAM_NAME} with value ${VERSION}"
-              fi
-          done
+
+          if [[ -n "${PLUGIN_NAME}" ]]; then
+            SOURCE_PARAM_NAME="${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_FROM}/${PLUGIN_NAME}"
+            DEST_PARAM_NAME="${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}/${PLUGIN_NAME}"
+            VERSION=$(aws ssm get-parameter --name "${SOURCE_PARAM_NAME}" --with-decryption --query Parameter.Value --output text)
+            CURRENT_VERSION=$(aws ssm get-parameter --name "${DEST_PARAM_NAME}" --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "null")
+            if [[ "${CURRENT_VERSION}" == "${VERSION}" ]]; then
+              echo "No updates for: ${PLUGIN_NAME}"
+            else
+              aws ssm put-parameter --name "${DEST_PARAM_NAME}" --value "${VERSION}" --type String --overwrite
+              echo "Updated ${DEST_PARAM_NAME} with value ${VERSION}"
+            fi
+          else
+            SOURCE_PARAMS=$(aws ssm get-parameters-by-path --path "${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_FROM}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
+            SOURCE_PARAMS=$(echo "${SOURCE_PARAMS}" | jq 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
+
+            DEST_PARAMS=$(aws ssm get-parameters-by-path --path "${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}" --recursive --with-decryption --query 'Parameters[].[Name,Value]' 2>&1)
+            DEST_PARAMS=$(echo "${DEST_PARAMS}" | jq 'reduce .[] as $item ({}; .[$item[0]] = $item[1])')
+
+            for i in $(echo "${SOURCE_PARAMS}" | jq -r 'keys[]'); do
+                NAME=$(basename "${i}")
+                VERSION=$(echo "${SOURCE_PARAMS}" | jq -r ".\"${i}\"")
+                CURRENT_VERSION=$(echo "${DEST_PARAMS}" | jq -r ".\"${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}/${NAME}\"")
+                DESTINATION_PARAM_NAME="${PARAM_BASE_NAME}/${SCHEMA_TYPE}/${PROMOTION_TO}/${NAME}"
+
+                if [[ ${CURRENT_VERSION} == "null" ]]; then
+                    RESULT=$(aws ssm put-parameter --name "${DESTINATION_PARAM_NAME}" --value "${VERSION}" --type String --overwrite)
+                    echo "Created ${DESTINATION_PARAM_NAME} with value ${VERSION}"
+                else
+                    if [[ ${CURRENT_VERSION} == "${VERSION}" ]]; then
+                        echo "No updates for: ${NAME}"
+                        continue
+                    fi
+                    RESULT=$(aws ssm put-parameter --name "${DESTINATION_PARAM_NAME}" --value "${VERSION}" --type String --overwrite)
+                    echo "Updated ${DESTINATION_PARAM_NAME} with value ${VERSION}"
+                fi
+            done
+          fi

@@ -19,6 +19,10 @@ on:
         description: "schema-type - example: 'playerV3Versions/playerV3OvpVersions'"
         required: true
         type: string
+      plugin-name:
+        description: "optional - plugin name to promote individually (for playerV3PartnersVersions) - example: 'playkit-youbora'"
+        required: false
+        type: string
     outputs:
       stage:
         description: "stage - example: 'beta/latest'"
@@ -67,9 +71,21 @@ jobs:
           aws s3 cp ${s3Path}/${jsonNameTo} .
           cat ${jsonNameTo}
 
-          echo "All the versions after the changes on ${jsonNameTo}:"
           aws s3 cp ${s3Path}/${jsonNameFrom} .
-          cat ${jsonNameFrom} > ${jsonNameTo}
+
+          if [[ -n "${{ inputs.plugin-name }}" ]]; then
+            PLUGIN_VERSION=$(jq -r --arg name "${{ inputs.plugin-name }}" '.[$name]' ${jsonNameFrom})
+            if [[ "${PLUGIN_VERSION}" == "null" ]]; then
+              echo "Plugin ${{ inputs.plugin-name }} not found in ${jsonNameFrom}"
+              exit 1
+            fi
+            jq --arg name "${{ inputs.plugin-name }}" --arg ver "${PLUGIN_VERSION}" '.[$name] = $ver' ${jsonNameTo} > ${jsonNameTo}.tmp
+            mv ${jsonNameTo}.tmp ${jsonNameTo}
+          else
+            cat ${jsonNameFrom} > ${jsonNameTo}
+          fi
+
+          echo "All the versions after the changes on ${jsonNameTo}:"
           cat ${jsonNameTo}
 
           aws s3 cp ${jsonNameTo} ${s3Path}/

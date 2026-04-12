@@ -30,6 +30,10 @@ on:
         type: string
         required: false
         description: "not required - if no value is given it will increment the minor version - example 'from 1.00 to 1.01'"
+      plugin-name:
+        type: string
+        required: false
+        description: "optional - plugin name to promote individually (for playerV3PartnersVersions) - example: 'playkit-youbora'"
 
 jobs:
   promote-schema:
@@ -41,6 +45,7 @@ jobs:
     with:
       promotion-type: ${{ inputs.promotion-type }}
       schema-type: ${{ inputs.schema-type }}
+      plugin-name: ${{ inputs.plugin-name }}
   build-uiconf:
     needs: promote-schema
     uses: ./.github/workflows/player_build_uiconf.yaml
@@ -72,6 +77,7 @@ jobs:
     with:
       promotion-type: ${{ inputs.promotion-type }}
       schema-type: ${{ inputs.schema-type }}
+      plugin-name: ${{ inputs.plugin-name }}
   check-secret:
     runs-on: ubuntu-latest
     outputs:
@@ -96,6 +102,7 @@ jobs:
       env: ${{ needs.promote-schema-parameter.outputs.env }}
       schema-type: ${{ inputs.schema-type }}
       uiconf-new-version: ${{ inputs.uiconf-new-version }}
+      plugin-name: ${{ inputs.plugin-name }}
   notification:
     if: always()
     uses: ./.github/workflows/notification.yaml

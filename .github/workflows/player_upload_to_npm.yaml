@@ -9,10 +9,6 @@ on:
       PLAYER_GITHUB_BOT_TOKEN:
         required: true
     inputs:
-      yarn-upgrade-list:
-        description: "list of packages to overwrite in package.json - example: 'playkit-js/playkit-js@canary @playkit-js/playkit-js-dash@canary'"
-        required: false
-        type: string
       env:
         description: "env - example: 'qa/prod'"
         required: false
@@ -56,13 +52,13 @@ jobs:
       full-npm-name: ${{ steps.full_npm_name.outputs.full_npm_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}
       - name: Node.js version ${{ inputs.node-version }}
         uses: Wandalen/wretry.action@v1.0.36
         with:
-          action: actions/setup-node@v3
+          action: actions/setup-node@v4
           with: |
             node-version: ${{ inputs.node-version }}
             always-auth: true
@@ -75,90 +71,59 @@ jobs:
           git config --global user.email "ovp.cp@kaltura.com"
           git config --global user.name "ovp-github-actions"
 
-      - name: Yarn upgrade ${{ inputs.yarn-upgrade-list }}
-        if: ${{ inputs.yarn-upgrade-list }}
-        run: |
-          if [ "${{ inputs.env }}" = "prod" ]; then
-            my_dir=$(pwd)
-            for package in ${{ inputs.yarn-upgrade-list }}; do
-              # get old version
-              old_version=$(yarn list | grep "${package}@" | awk -F '@' '{print $3}')
-
-              # yarn upgrade package
-              yarn upgrade $package
-
-              # get new version
-              new_version=$(yarn list | grep "${package}@" | awk -F '@' '{print $3}')
-
-              # commit for version was changed
-              if [ "${old_version}" != "${new_version}" ]; then
-                # git clone
-                repo=$(echo "${package}"| sed -e 's/@playkit-js\///g')
-                git clone https://${{ secrets.PLAYER_GITHUB_BOT_TOKEN }}@github.com/kaltura/${repo}.git ../${repo} > /dev/null 2>&1
-                cd ../${repo}
-
-                # find if package has changed
-                package_version=$(echo $(node -p "require('./package.json').version;"))
-                package_version_commit=$(git log --oneline | fgrep "${package_version}" | awk '{print $1}')
-                package_modified_feat=$(git log --oneline $prev_version_commit..HEAD | egrep '(feat)\((FEC|FEV|SUP|PSVAMB)-[0-9]+\):')
-                package_modified_fix=$(git log --oneline $prev_version_commit..HEAD | egrep '(fix)\((FEC|FEV|SUP|PSVAMB)-[0-9]+\):')
-
-                cd ${my_dir}
-
-                if [[ -z "${package_modified_feat}" ]]; then
-                  git commit -m "feat: update ${repo} to [${new_version}](https://github.com/kaltura/${repo}/releases/tag/v${new_version})"
-                elif [[ -z "${package_modified_fix}" ]]; then
-                  git commit -m "fix: update ${repo} to [${new_version}](https://github.com/kaltura/${repo}/releases/tag/v${new_version})"
-                fi
-              fi
-            done
-          else
-            for package in ${{ inputs.yarn-upgrade-list }}; do
-              yarn add $package --exact
-            done
-          fi
-
-      - name: Create temporary .npmrc
-        run: |
-          echo "@kaltura:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GIT_TOKEN}" >> .npmrc
       - name: Preinstall
         run: npx --yes --prefer-online --registry=https://npm.pkg.github.com --package @kaltura/kaltura-tools@latest kaltura-tools check --root=.
         env:
           GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Remove temporary .npmrc
-        run: rm -f .npmrc
-      - name: Disable preinstall
-        working-directory: ${{ github.workspace }}
-        run: |
-          sed -i.bak 's/"preinstall":/"disabled-preinstall":/' package.json
-          rm package.json.bak
-      
-      - name: Yarn install
-        run: yarn install
 
-      - name: Yarn run release with NODE_OPTIONS
+      - name: Setup JFrog
+        uses: jfrog/setup-jfrog-cli@v4
+        id: setup-jfrog
+        env:
+          JF_URL: https://kalturaa.jfrog.io
+        with:
+          oidc-provider-name: ovp-github-oidc
+
+      - name: Debug env presence
+        run: |
+          echo "KALTURA_JFROG_TOKEN is set? ${{ env.KALTURA_JFROG_TOKEN != '' }}"
+          echo "KALT_REGISTRY_TOKEN is set? ${{ env.KALT_REGISTRY_TOKEN != '' }}"
+          echo "TEST_VAR is set? ${{ env.TEST_VAR != '' }}"
+        env:
+          TEST_VAR: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+      
+      - name: NPM ci
+        run: npm ci --verbose
+        env:
+          TEST_VAR: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+          KALT_REGISTRY_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
+
+      - name: NPM run release with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
-            yarn run release
+            npm run release
           elif [ "${{ inputs.stage }}" = "patch" ]; then
-            yarn run release --prerelease patch --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease patch --skip.commit=true --skip.tag=true
           else
-            yarn run release --prerelease canary --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease canary --skip.commit=true --skip.tag=true
           fi
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
-      - name: Yarn run release without NODE_OPTIONS
+      - name: NPM run release without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
-            yarn run release
+            npm run release
           elif [ "${{ inputs.stage }}" = "patch" ]; then
-            yarn run release --prerelease patch --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease patch --skip.commit=true --skip.tag=true
           else
-            yarn run release --prerelease canary --skip.commit=true --skip.tag=true
+            npm run release -- --prerelease canary --skip.commit=true --skip.tag=true
           fi
 
       - name: Update version in package.json file
@@ -178,19 +143,24 @@ jobs:
           rm package.jsonE
           rm CHANGELOG.mdE
 
-      - name: Yarn run build with NODE_OPTIONS
+      - name: NPM run build with NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider == 'true' }}
         run: |
-          yarn run build
+          npm run build
           ls -la dist/
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
 
-      - name: Yarn run build without NODE_OPTIONS
+      - name: NPM run build without NODE_OPTIONS
         if: ${{ inputs.enabled-openssl-legacy-provider != 'true' }}
         run: |
-          yarn run build
+          npm run build
           ls -la dist/
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KALTURA_JFROG_TOKEN: ${{ steps.setup-jfrog.outputs.oidc-token }}
 
       - name: Npm publish
         run: |
@@ -209,10 +179,10 @@ jobs:
           NPM_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.PLAYER_NPM_TOKEN }}
 
-      - name: Yarn run pushTaggedRelease and create github release
+      - name: Npm run pushTaggedRelease and create github release
         if: ${{ inputs.env == 'prod' }}
         run: |
-          yarn run pushTaggedRelease
+          npm run pushTaggedRelease
           npx conventional-github-releaser -p angular -t ${{ secrets.PLAYER_GITHUB_BOT_TOKEN }} || true
 
       - name: Output name

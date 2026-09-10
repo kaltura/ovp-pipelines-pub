@@ -85,7 +85,14 @@ jobs:
 
       - name: Download plugin package
         run: |
-          download_url=$(yarn info --silent ${{ inputs.full-npm-name }} dist.tarball)
+          download_url=$(npm view ${{ inputs.full-npm-name }} dist.tarball)
+          echo $download_url
+
+          sleep 60
+
+          download_url=$(npm view ${{ inputs.full-npm-name }} dist.tarball)
+          echo $download_url
+
           curl -L ${download_url} -o package.tgz
           tar -xzf package.tgz
 

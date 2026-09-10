@@ -202,7 +202,7 @@ jobs:
       env: ${{ inputs.env }}
       schema-type: ${{ inputs.schema-type }}
   notification:
-    if: always()
+    if: false
     uses: ./.github/workflows/notification.yaml
     needs: [ deploy-kconf, update-schema-parameter, deploy-uiconf, build-uiconf, update-schema, upload-to-s3, upload-packages-to-npm, running-tests ]
     secrets:

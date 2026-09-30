@@ -85,8 +85,12 @@ jobs:
 
       - name: Download plugin package
         run: |
-          download_url=$(yarn info --silent ${{ inputs.full-npm-name }} dist.tarball)
-          curl -L ${download_url} -o package.tgz
+          for i in {1..30}; do
+            download_url=$(npm view ${{ inputs.full-npm-name }} dist.tarball 2>/dev/null) && [ -n "$download_url" ] && break
+            echo "Not on registry yet, retrying in 10s..."
+            sleep 10
+          done
+          curl -fL ${download_url} -o package.tgz
           tar -xzf package.tgz
 
       - name: Configure aws credentials

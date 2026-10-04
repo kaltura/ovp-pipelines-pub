@@ -99,6 +99,7 @@ jobs:
           fi
 
           curl -fL "$download_url" -o package.tgz
+          tar -xzf package.tgz
 
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v2

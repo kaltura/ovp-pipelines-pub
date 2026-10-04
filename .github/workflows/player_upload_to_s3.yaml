@@ -85,13 +85,20 @@ jobs:
 
       - name: Download plugin package
         run: |
-          for i in {1..30}; do
-            download_url=$(npm view ${{ inputs.full-npm-name }} dist.tarball 2>/dev/null) && [ -n "$download_url" ] && break
-            echo "Not on registry yet, retrying in 10s..."
+          download_url=""
+          for i in $(seq 1 12); do
+            download_url=$(npm view "${{ inputs.full-npm-name }}" dist.tarball --prefer-online --registry https://registry.npmjs.org || true)
+            [ -n "$download_url" ] && break
+            echo "Attempt $i/12: not on registry yet, retrying in 10s..."
             sleep 10
           done
-          curl -fL ${download_url} -o package.tgz
-          tar -xzf package.tgz
+
+          if [ -z "$download_url" ]; then
+            echo "::error::${{ inputs.full-npm-name }} not found on npm registry after 2 min"
+            exit 1
+          fi
+
+          curl -fL "$download_url" -o package.tgz
 
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v2

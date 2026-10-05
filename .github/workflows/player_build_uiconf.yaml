@@ -131,11 +131,11 @@ jobs:
 
           if [ "${{ inputs.stage }}" = "canary" ]; then
             jsonNameSchema="player-canary-${{ inputs.schema-type }}.json"
-          elif [ "${{ inputs.env }}" = "qa" ] && ["${{ inputs.stage }}" = "beta" ]; then
+          elif [ "${{ inputs.env }}" = "qa" ] && [ "${{ inputs.stage }}" = "beta" ]; then
             jsonNameSchema="player-qa-beta-${{ inputs.schema-type }}.json"
-          elif [ "${{ inputs.env }}" = "prod" ] && ["${{ inputs.stage }}" = "beta" ]; then
+          elif [ "${{ inputs.env }}" = "prod" ] && [ "${{ inputs.stage }}" = "beta" ]; then
             jsonNameSchema="player-prod-beta-${{ inputs.schema-type }}.json"
-          elif [ "${{ inputs.env }}" = "prod" ] && ["${{ inputs.stage }}" = "latest" ]; then
+          elif [ "${{ inputs.env }}" = "prod" ] && [ "${{ inputs.stage }}" = "latest" ]; then
             jsonNameSchema="player-prod-latest-${{ inputs.schema-type }}.json"
           else
             jsonNameSchema="player-qa-${{ inputs.schema-type }}.json"

@@ -86,15 +86,15 @@ jobs:
       - name: Download plugin package
         run: |
           download_url=""
-          for i in $(seq 1 12); do
+          for i in $(seq 1 24); do
             download_url=$(npm view "${{ inputs.full-npm-name }}" dist.tarball --prefer-online --registry https://registry.npmjs.org || true)
             [ -n "$download_url" ] && break
-            echo "Attempt $i/12: not on registry yet, retrying in 10s..."
+            echo "Attempt $i/24: not on registry yet, retrying in 10s..."
             sleep 10
           done
 
           if [ -z "$download_url" ]; then
-            echo "::error::${{ inputs.full-npm-name }} not found on npm registry after 2 min"
+            echo "::error::${{ inputs.full-npm-name }} not found on npm registry after 4 min"
             exit 1
           fi
 
